@@ -1,0 +1,24 @@
+[
+  {
+    "reference": "BKG-DEMO",
+    "consultType": "bp-check",
+    "date": "2026-09-01",
+    "slot": "10:00",
+    "fullName": "Demo Customer",
+    "phone": "0712 345 678",
+    "notes": "Demo booking \u2014 try advancing its status from the staff dashboard.",
+    "status": "requested",
+    "receivedAt": "2026-08-20T09:15:00.000Z"
+  },
+  {
+    "reference": "BKG-W4LD",
+    "consultType": "prescription-review",
+    "date": "2026-09-03",
+    "slot": "14:00",
+    "fullName": "Grace Muthoni",
+    "phone": "0733 111 222",
+    "notes": "Monthly refill review.",
+    "status": "confirmed",
+    "receivedAt": "2026-08-21T11:30:00.000Z"
+  }
+]

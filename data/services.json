@@ -1,0 +1,80 @@
+[
+  {
+    "slug": "pharmacy-services",
+    "name": "Pharmacy Services",
+    "short": "Prescription processing, dispensing and medication support.",
+    "description": "The core of Medivyx Medical Care. The pharmacy team processes prescriptions carefully, dispenses medicines and takes time to make sure you understand how to take what has been dispensed.",
+    "bullets": [
+      "Prescription processing and dispensing",
+      "Guidance on how to take your medicines",
+      "Medication questions answered by the pharmacy team",
+      "Refill reminders and repeat requests"
+    ],
+    "icon": "Pill"
+  },
+  {
+    "slug": "healthcare-products",
+    "name": "Healthcare Products",
+    "short": "Medical consumables, healthcare essentials and related products.",
+    "description": "A practical range of healthcare essentials for individuals and families — from pain and fever basics to wellness and personal care items you use every day.",
+    "bullets": [
+      "Everyday health essentials",
+      "Wellness and personal care range",
+      "Baby care basics",
+      "Ask the team to check availability for you"
+    ],
+    "icon": "Package"
+  },
+  {
+    "slug": "prescription-support",
+    "name": "Prescription Support",
+    "short": "Submit a prescription and let the pharmacy team review it.",
+    "description": "Send your prescription ahead of time through the website and the Medivyx team reviews it before you arrive — so your medicine can be prepared for pickup, saving you waiting time.",
+    "bullets": [
+      "Upload a photo or PDF of your prescription",
+      "The team reviews and confirms with you",
+      "Choose pickup or delivery where available",
+      "Ask the pharmacist about your medication"
+    ],
+    "icon": "FileText"
+  },
+  {
+    "slug": "personal-family-care",
+    "name": "Personal & Family Care",
+    "short": "Everyday healthcare products for individuals and families.",
+    "description": "Healthcare is a family matter. Medivyx keeps parents, caregivers and households in mind — with baby care basics, home first aid and everyday wellness products in one place.",
+    "bullets": [
+      "Baby and infant care basics",
+      "Home first aid essentials",
+      "Everyday wellness support",
+      "Helpful guidance from a caring team"
+    ],
+    "icon": "HeartHandshake"
+  },
+  {
+    "slug": "medical-supplies",
+    "name": "Medical Supplies",
+    "short": "Healthcare and medical-use products.",
+    "description": "A selection of medical and clinical supplies for home care and everyday protection — thermometers, monitors, gloves, dressings and more.",
+    "bullets": [
+      "Home monitoring devices",
+      "Dressings and first aid supplies",
+      "Protective and hygiene supplies",
+      "Ask about items you cannot find listed"
+    ],
+    "icon": "BriefcaseMedical"
+  },
+  {
+    "slug": "customer-support",
+    "name": "Customer Support",
+    "short": "Easy access to the Medivyx team through phone and WhatsApp.",
+    "description": "Sometimes you just need to ask a quick question. Reach the Medivyx team directly on phone or WhatsApp — or through the website — without unnecessary visits or long calls.",
+    "bullets": [
+      "Chat with the team on WhatsApp",
+      "Call during opening hours",
+      "Send a message through the website",
+      "Ask about products, prescriptions and pickup"
+    ],
+    "icon": "Phone"
+  }
+]

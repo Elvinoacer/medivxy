@@ -1,0 +1,30 @@
+[
+  {
+    "question": "Do you accept prescriptions?",
+    "answer": "Yes. Medivyx processes and dispenses against valid prescriptions. You can also submit a prescription ahead of time through the Request Medicine page and the pharmacy team will review it before you arrive."
+  },
+  {
+    "question": "Can I request a medicine before visiting?",
+    "answer": "Absolutely. Use the Request Medicine page to tell us what you need, attach your prescription if you have one, and choose pickup or delivery. The team reviews your request and contacts you to confirm."
+  },
+  {
+    "question": "Can I contact Medivyx through WhatsApp?",
+    "answer": "Yes — WhatsApp is one of the fastest ways to reach the team. Use any “Chat on WhatsApp” button on this website; your message can be pre-filled so you don’t have to type."
+  },
+  {
+    "question": "Do you offer delivery?",
+    "answer": "Pickup at the pharmacy is always available. Delivery options and coverage are being confirmed for the demo — ask the team on WhatsApp about current arrangements for your area."
+  },
+  {
+    "question": "Where is Medivyx located?",
+    "answer": "Medivyx Medical Care is based in Roysambu, Nairobi. Use the Get Directions button on the Contact page for directions, or ask on WhatsApp and the team will send you a pin."
+  },
+  {
+    "question": "What healthcare products do you stock?",
+    "answer": "A practical range covering medicines, wellness products, baby care, personal care and medical supplies. Browse the Products page — and if something is not listed, ask the team and they will check for you."
+  },
+  {
+    "question": "Can someone else collect medicine on my behalf?",
+    "answer": "In many cases, yes. Ask the team when your request is confirmed so they can tell you exactly what the collecting person should bring with them."
+  }
+]

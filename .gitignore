@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# demo local stores (not for production)
+/data/contact-submissions.json
+/data/medicine-requests.json
