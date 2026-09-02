@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   ArrowRight,
@@ -18,6 +19,7 @@ import {
   PackageSearch,
   ShieldCheck,
   Loader2,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +30,7 @@ import { Reveal } from "@/components/site/reveal";
 import { SiteLink } from "@/components/site/link";
 import { business, whatsappLink, whatsappMessages } from "@/lib/business";
 import { track } from "@/lib/analytics";
+import { isValidKenyanPhone, LENGTHS } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 
 const STEPS = ["Your Request", "Your Details", "Pickup or Delivery", "Review"] as const;
@@ -53,6 +56,56 @@ const INITIAL: FormState = {
   fulfilment: "pickup",
 };
 
+/** Draft persistence — a refresh mid-wizard used to lose everything.
+ * Text fields (never the prescription file) are saved to localStorage
+ * after every change and restored on the next visit. */
+const DRAFT_KEY = "medivxy:request-draft";
+
+function loadDraft(): FormState | null {
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<FormState>;
+    const merged = { ...INITIAL, ...parsed };
+    const meaningful =
+      merged.medicine.trim() ||
+      merged.fullName.trim() ||
+      merged.phone.trim() ||
+      merged.notes.trim();
+    return meaningful ? merged : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(form: FormState): void {
+  try {
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+  } catch {
+    // storage unavailable — drafts simply aren't kept
+  }
+}
+
+function clearDraft(): void {
+  try {
+    window.localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+/** Which wizard step holds each field (used to jump back to the right
+ * place when the server rejects a specific field). */
+const FIELD_STEP: Record<string, number> = {
+  medicine: 0,
+  notes: 0,
+  prescription: 0,
+  fullName: 1,
+  phone: 1,
+  contactMethod: 1,
+  fulfilment: 2,
+};
+
 /**
  * Medicine request workflow (research.md §8):
  * Request → upload prescription → details → pickup/delivery → submit →
@@ -66,21 +119,56 @@ export function RequestMedicineForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [reference, setReference] = useState("");
+  const [draftRestored, setDraftRestored] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Restore a saved draft once after mount (localStorage is client-only).
+  // Indirect setState (open-status pattern) — runs once after mount.
+  useEffect(() => {
+    const restore = () => {
+      const draft = loadDraft();
+      if (draft) {
+        setForm(draft);
+        setDraftRestored(true);
+      }
+    };
+    restore();
+  }, []);
+
+  // Persist a draft whenever the text fields change (skips the pristine state).
+  useEffect(() => {
+    if (reference) return; // success — draft already cleared
+    const meaningful =
+      form.medicine.trim() || form.fullName.trim() || form.phone.trim() || form.notes.trim();
+    if (meaningful) saveDraft(form);
+  }, [form, reference]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
-  function validateStep(current: number): boolean {
+  function validateStep(current: number, field?: string): boolean {
+    // When a single field is passed (onBlur), only re-check that field and
+    // merge the result into existing errors instead of resetting the batch.
     const next: Record<string, string> = {};
     if (current === 0) {
-      if (form.medicine.trim().length < 3)
+      if (form.medicine.trim().length < LENGTHS.medicine.min)
         next.medicine = "Please tell us the medicine or product you need.";
     }
     if (current === 1) {
-      if (form.fullName.trim().length < 2) next.fullName = "Please enter your full name.";
-      if (!/^(?:\+?254|0)[17]\d{8}$|^(?:\+?254|0)\d{9}$/.test(form.phone.replace(/\s+/g, "")))
+      if (form.fullName.trim().length < LENGTHS.fullName.min)
+        next.fullName = "Please enter your full name.";
+      if (!isValidKenyanPhone(form.phone))
         next.phone = "Please enter a valid Kenyan phone number, e.g. 07XX XXX XXX.";
+    }
+    if (field) {
+      const message = next[field] ?? "";
+      setErrors((e) => {
+        const merged = { ...e };
+        if (message) merged[field] = message;
+        else delete merged[field];
+        return merged;
+      });
+      return !message;
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -108,7 +196,22 @@ export function RequestMedicineForm() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!validateStep(0) || !validateStep(1)) return;
+    if (!validateStep(0) || !validateStep(1)) {
+      // Jump to whichever step holds the first error so the user sees it.
+      const merged: Record<string, string> = {};
+      if (form.medicine.trim().length < LENGTHS.medicine.min)
+        merged.medicine = "Please tell us the medicine or product you need.";
+      if (form.fullName.trim().length < LENGTHS.fullName.min)
+        merged.fullName = "Please enter your full name.";
+      if (!isValidKenyanPhone(form.phone))
+        merged.phone = "Please enter a valid Kenyan phone number, e.g. 07XX XXX XXX.";
+      setErrors(merged);
+      const firstBad = Object.keys(merged)[0];
+      const target = firstBad ? FIELD_STEP[firstBad] : 0;
+      setStep(target ?? 0);
+      toast.error("Please check the highlighted fields.");
+      return;
+    }
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -118,16 +221,46 @@ export function RequestMedicineForm() {
       fd.set("phone", form.phone);
       fd.set("contactMethod", form.contactMethod);
       fd.set("fulfilment", form.fulfilment);
+      fd.set("website", ""); // honeypot (spam defense, mirrors the contact form)
       if (file) fd.set("prescription", file);
 
       const res = await fetch("/api/request-medicine", { method: "POST", body: fd });
-      const data = (await res.json()) as { ok?: boolean; reference?: string; error?: string };
-      if (!res.ok || !data.ok) throw new Error(data.error ?? "Request failed");
+      const data = (await res.json()) as {
+        ok?: boolean;
+        reference?: string;
+        error?: string;
+        fields?: Record<string, string>;
+        retryAfter?: number;
+      };
+      if (!res.ok || !data.ok) {
+        // Map per-field server errors onto the form (and jump to the step
+        // that owns the first bad field) — previously these were dropped.
+        if (data.fields && Object.keys(data.fields).length > 0) {
+          setErrors(data.fields);
+          const firstBad = Object.keys(data.fields)[0];
+          const target = firstBad ? FIELD_STEP[firstBad] : undefined;
+          setStep(target !== undefined && target <= 3 ? target : 3);
+          toast.error("Please check the highlighted fields.");
+        } else {
+          setErrors({ submit: data.error ?? "Request failed — please try again." });
+          toast.error(data.error ?? "Request failed — please try again.", {
+            description: "You can also message us on WhatsApp and we'll help directly.",
+          });
+        }
+        return;
+      }
       track("prescription_request", { fulfilment: form.fulfilment, hasFile: !!file });
       setReference(data.reference ?? "MDX-0000");
+      clearDraft();
       setStep(4); // success
+      toast.success("Request received", {
+        description: `Your reference is ${data.reference ?? "MDX-0000"} — keep it safe, you can track your request with it.`,
+      });
     } catch {
       setErrors({ submit: "Something went wrong sending your request. Please try again or message us on WhatsApp." });
+      toast.error("Network error", {
+        description: "We couldn't reach the server. Please check your connection and try again.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -206,6 +339,44 @@ export function RequestMedicineForm() {
         className="mx-auto max-w-2xl rounded-3xl border bg-card p-6 shadow-lg sm:p-8"
         noValidate
       >
+        {/* Honeypot (spam protection — hidden from humans and assistive tech) */}
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="hidden"
+        />
+
+        {draftRestored && step < 4 && (
+          <div
+            role="status"
+            className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-mint/60 px-4 py-3 text-sm text-mint-foreground"
+          >
+            <p className="min-w-0 flex-1">
+              We restored the details you started earlier — continue where
+              you left off.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-full px-3 text-xs"
+              onClick={() => {
+                setForm(INITIAL);
+                setErrors({});
+                setDraftRestored(false);
+                setStep(0);
+                clearDraft();
+              }}
+            >
+              <RotateCcw aria-hidden="true" className="size-3.5" />
+              Start over
+            </Button>
+          </div>
+        )}
+
         {/* Progress */}
         <ol className="mb-8 flex items-center gap-2" aria-label="Form progress">
           {STEPS.map((label, i) => (
@@ -237,6 +408,10 @@ export function RequestMedicineForm() {
             </li>
           ))}
         </ol>
+        {/* Compact step label — mobile users saw dots only before */}
+        <p className="-mt-5 mb-7 text-sm font-semibold text-primary sm:hidden">
+          Step {step + 1} of {STEPS.length} — {STEPS[step]}
+        </p>
         <p className="sr-only" aria-live="polite">
           Step {step + 1} of {STEPS.length}: {STEPS[step]}
         </p>
@@ -248,18 +423,24 @@ export function RequestMedicineForm() {
               What do you need?
             </legend>
             <div>
-              <Label htmlFor="medicine">Medicine or product requested</Label>
+              <div className="flex items-baseline justify-between">
+                <Label htmlFor="medicine">Medicine or product requested</Label>
+                <CharCount value={form.medicine.length} max={LENGTHS.medicine.max} />
+              </div>
               <Textarea
                 id="medicine"
                 value={form.medicine}
                 onChange={(e) => set("medicine", e.target.value)}
+                onBlur={() => validateStep(0, "medicine")}
                 placeholder="e.g. Paracetamol 500mg, ORS sachets, my monthly prescription refill…"
                 rows={3}
-                className="mt-2 bg-white"
+                maxLength={LENGTHS.medicine.max}
+                className="mt-2 bg-background"
                 aria-invalid={!!errors.medicine}
+                aria-describedby={errors.medicine ? "medicine-error" : undefined}
               />
               {errors.medicine && (
-                <p role="alert" className="mt-1.5 text-sm text-destructive">
+                <p id="medicine-error" role="alert" className="mt-1.5 text-sm text-destructive">
                   {errors.medicine}
                 </p>
               )}
@@ -323,14 +504,21 @@ export function RequestMedicineForm() {
             </div>
 
             <div>
-              <Label htmlFor="notes">Notes <span className="font-normal text-muted-foreground">(optional)</span></Label>
+              <div className="flex items-baseline justify-between">
+                <Label htmlFor="notes">
+                  Notes{" "}
+                  <span className="font-normal text-muted-foreground">(optional)</span>
+                </Label>
+                <CharCount value={form.notes.length} max={LENGTHS.notes.max} />
+              </div>
               <Textarea
                 id="notes"
                 value={form.notes}
                 onChange={(e) => set("notes", e.target.value)}
                 placeholder="Anything the pharmacist should know — quantity, brand preference, collection timing…"
                 rows={2}
-                className="mt-2 bg-white"
+                maxLength={LENGTHS.notes.max}
+                className="mt-2 bg-background"
               />
             </div>
           </fieldset>
@@ -348,13 +536,16 @@ export function RequestMedicineForm() {
                 id="fullName"
                 value={form.fullName}
                 onChange={(e) => set("fullName", e.target.value)}
+                onBlur={() => validateStep(1, "fullName")}
                 placeholder="e.g. Amina Wanjiru"
                 autoComplete="name"
-                className="mt-2 bg-white"
+                maxLength={LENGTHS.fullName.max}
+                className="mt-2 bg-background"
                 aria-invalid={!!errors.fullName}
+                aria-describedby={errors.fullName ? "fullName-error" : undefined}
               />
               {errors.fullName && (
-                <p role="alert" className="mt-1.5 text-sm text-destructive">
+                <p id="fullName-error" role="alert" className="mt-1.5 text-sm text-destructive">
                   {errors.fullName}
                 </p>
               )}
@@ -366,14 +557,21 @@ export function RequestMedicineForm() {
                 type="tel"
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
+                onBlur={() => validateStep(1, "phone")}
                 placeholder="07XX XXX XXX"
                 autoComplete="tel"
-                className="mt-2 bg-white"
+                maxLength={16}
+                className="mt-2 bg-background"
                 aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? "phone-error" : "phone-hint"}
               />
-              {errors.phone && (
-                <p role="alert" className="mt-1.5 text-sm text-destructive">
+              {errors.phone ? (
+                <p id="phone-error" role="alert" className="mt-1.5 text-sm text-destructive">
                   {errors.phone}
+                </p>
+              ) : (
+                <p id="phone-hint" className="mt-1.5 text-xs text-muted-foreground">
+                  Kenyan number — we&apos;ll only use it about this request.
                 </p>
               )}
             </div>
@@ -536,5 +734,22 @@ function ReviewRow({ label, children }: { label: string; children: React.ReactNo
       </dt>
       <dd className="text-sm leading-6 text-foreground">{children}</dd>
     </div>
+  );
+}
+
+/** Subtle character counter — appears once the field nears its limit. */
+function CharCount({ value, max }: { value: number; max: number }) {
+  const remaining = max - value;
+  if (remaining > Math.max(40, max * 0.15)) return null;
+  return (
+    <span
+      className={cn(
+        "text-xs tabular-nums",
+        remaining <= 20 ? "font-semibold text-destructive" : "text-muted-foreground"
+      )}
+      aria-hidden="true"
+    >
+      {remaining} left
+    </span>
   );
 }

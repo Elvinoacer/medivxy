@@ -152,7 +152,7 @@ export function ProductView({ product }: { product: Product }) {
 
             {/* CTAs (screen only) */}
             <div className="no-print mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" className="flex-1 rounded-full bg-[#1faa53] px-6 text-white shadow-md shadow-[#1faa53]/25 hover:bg-[#199047]">
+              <Button asChild size="lg" className="wa-cta flex-1 rounded-full px-6 shadow-md shadow-[#1faa53]/25">
                 <a
                   href={whatsappLink(whatsappMessages.product(product.name))}
                   target="_blank"

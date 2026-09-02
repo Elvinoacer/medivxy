@@ -75,7 +75,7 @@ function CountUp({ value }: { value: number }) {
 
 export function StatsBand() {
   return (
-    <section aria-label="Medivyx in numbers" className="border-y bg-white/70">
+    <section aria-label="Medivyx in numbers" className="border-y bg-card/60">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
         <Reveal>
           <div className="grid grid-cols-2 gap-6 rounded-3xl bg-primary p-8 text-primary-foreground shadow-lg sm:p-10 lg:grid-cols-4">

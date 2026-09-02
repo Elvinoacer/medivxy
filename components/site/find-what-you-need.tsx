@@ -90,7 +90,7 @@ export function FindWhatYouNeed() {
                 e.preventDefault();
                 submit(query);
               }}
-              className="flex items-center gap-2 rounded-full bg-white p-2 shadow-xl shadow-black/20"
+              className="flex items-center gap-2 rounded-full bg-background p-2 shadow-xl shadow-black/20"
             >
               <label htmlFor="site-search" className="sr-only">
                 Search medicines, healthcare products and services

@@ -107,7 +107,7 @@ export function AboutView() {
         </div>
       </section>
 
-      <section className="border-y bg-white/70">
+      <section className="border-y bg-card/60">
         <div className="mx-auto max-w-6xl px-4 py-16 text-center sm:px-6 sm:py-20">
           <Reveal>
             <span className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">

@@ -32,7 +32,7 @@ const REASONS = [
 
 export function WhyMedivyx() {
   return (
-    <section aria-labelledby="why-heading" className="border-y bg-white/70">
+    <section aria-labelledby="why-heading" className="border-y bg-card/60">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <SectionHeading
           eyebrow="Why Medivyx"

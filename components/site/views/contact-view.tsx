@@ -126,7 +126,7 @@ export function ContactView() {
       </section>
 
       {/* NAP + map intent for discoverability (research.md §21) */}
-      <section className="border-t bg-white/70">
+      <section className="border-t bg-card/60">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
           <Reveal>
             <address className="mx-auto flex max-w-xl flex-col items-center gap-1.5 text-center text-sm not-italic text-muted-foreground">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Phone, Mail, MapPin, Clock, MessageCircle } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, MessageCircle, Lock } from "lucide-react";
 import { Logo } from "@/components/site/logo";
 import { SiteLink } from "@/components/site/link";
 import { Reveal } from "@/components/site/reveal";
@@ -155,11 +155,23 @@ export function SiteFooter() {
             <p>
               © {new Date().getFullYear()} {business.name}. All rights reserved.
             </p>
-            <p className="max-w-md text-background/45">
-              Demo website — business details shown are placeholders until
-              confirmed. Information on this site is general and does not
-              replace advice from a qualified healthcare professional.
-            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="max-w-md text-background/45">
+                Demo website — business details shown are placeholders until
+                confirmed. Information on this site is general and does not
+                replace advice from a qualified healthcare professional.
+              </p>
+              {/* Staff area link — /admin was previously unreachable except by
+                  typing the URL; a discreet footer link fixes that. */}
+              <SiteLink
+                href="/admin"
+                trackLabel="footer-staff"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-background/55 transition-colors hover:text-background"
+              >
+                <Lock aria-hidden="true" className="size-3" />
+                Staff
+              </SiteLink>
+            </div>
           </div>
         </div>
       </div>

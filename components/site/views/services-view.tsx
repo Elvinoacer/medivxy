@@ -56,7 +56,7 @@ export function ServicesView() {
                     href="/book"
                     trackLabel="services-book-cta"
                     ariaLabel="Book a consultation with a pharmacist"
-                    className="inline-flex min-h-12 items-center gap-2 rounded-full bg-background px-6 py-3 text-sm font-semibold text-primary shadow-md transition-all duration-200 hover:bg-white active:scale-[0.97] sm:text-base"
+                    className="inline-flex min-h-12 items-center gap-2 rounded-full bg-background px-6 py-3 text-sm font-semibold text-primary shadow-md transition-all duration-200 hover:bg-card active:scale-[0.97] sm:text-base"
                   >
                     <CalendarCheck aria-hidden="true" className="size-4.5" />
                     Book a Consultation

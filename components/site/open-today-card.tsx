@@ -13,7 +13,7 @@ export function OpenTodayCard() {
   const { t } = useLanguage();
 
   return (
-    <div className="absolute -top-4 right-4 hidden rounded-2xl bg-white/95 px-4 py-3 shadow-lg ring-1 ring-border backdrop-blur md:block">
+    <div className="absolute -top-4 right-4 hidden rounded-2xl bg-card/95 px-4 py-3 shadow-lg ring-1 ring-border backdrop-blur md:block">
       <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
         <span aria-hidden="true" className="relative flex size-2">
           {ready && open && (

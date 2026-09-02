@@ -132,7 +132,7 @@ export function NewsletterSignup() {
         className={
           "text-xs sm:col-span-2 " +
           (status === "error"
-            ? "font-medium text-red-300"
+            ? "font-medium text-red-300 dark:text-red-500"
             : "text-background/55")
         }
       >

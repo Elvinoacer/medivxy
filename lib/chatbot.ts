@@ -34,6 +34,14 @@ export interface ChatReply {
   suggestions: string[];
 }
 
+/** A single prior conversation turn, sent by the chat UI. */
+export interface ChatHistoryTurn {
+  role: "user" | "bot";
+  content: string;
+  /** Suggestion chips attached to a bot turn (used for "yes" follow-ups). */
+  suggestions?: string[];
+}
+
 /* ------------------------------------------------------------------ */
 /* Knowledge base                                                      */
 /* ------------------------------------------------------------------ */
@@ -319,7 +327,7 @@ const MEDICAL_PATTERNS = [
   "medicine for my baby", "give my child", "overdose", "took too many", "mix", "interact",
 ];
 
-export function getBotReply(input: string): ChatReply {
+export function getBotReply(input: string, history: ChatHistoryTurn[] = []): ChatReply {
   const q = input.toLowerCase().trim();
   if (!q) {
     return INTENTS[0].reply();
@@ -351,6 +359,10 @@ export function getBotReply(input: string): ChatReply {
   const product = findProduct(input);
   if (product) return productReply(product);
 
+  // 4b. Follow-up resolution (multi-turn context)
+  const followUp = resolveFollowUp(q, history);
+  if (followUp) return followUp;
+
   // 5. Fallback
   return {
     intent: "fallback",
@@ -363,6 +375,67 @@ export function getBotReply(input: string): ChatReply {
       "What products do you stock?",
     ],
   };
+}
+
+/* ── Multi-turn follow-up resolution ─────────────────────────────
+ * The chat UI sends the last few turns. Two patterns are resolved:
+ *  1. Affirmative replies ("yes", "sure", "ok") → treat as clicking the
+ *     first suggestion chip of the last bot answer (that is what the
+ *     user almost always means).
+ *  2. Pronoun/ellipsis follow-ups ("how much is it?", "is it available?")
+ *     → re-resolve against the last product mentioned in the conversation.
+ * Both fall through to the normal fallback when there is no context. */
+const AFFIRMATIVE_RE =
+  /^(yes|yeah|yep|yup|sure|ok|okay|please|sounds good|go ahead|sawa|ndio|ndiyo|naam|ok please|yes please)[!., ]*$/;
+
+const FOLLOWUP_WORDS =
+  /\b(it|that|that one|the same|one|price|prices|cost|how much|stock|available|deliver|deliver it|get it|order it|request it)\b/;
+
+function resolveFollowUp(
+  q: string,
+  history: ChatHistoryTurn[]
+): ChatReply | null {
+  if (history.length === 0) return null;
+
+  // 1. Affirmative → first suggestion of the last bot turn
+  if (AFFIRMATIVE_RE.test(q)) {
+    const lastBot = [...history].reverse().find((h) => h.role === "bot");
+    const suggestion = lastBot?.suggestions?.[0];
+    if (suggestion) {
+      // Suggestions are plain topic questions — safe to re-resolve.
+      // They can never be affirmative themselves, so no recursion loop.
+      return getBotReply(suggestion);
+    }
+    return null;
+  }
+
+  // 2. Pronoun/ellipsis follow-up → last product mentioned by the user
+  if (FOLLOWUP_WORDS.test(q) && q.split(/\s+/).length <= 8) {
+    let lastProduct: Product | undefined;
+    for (const turn of history) {
+      if (turn.role === "user") {
+        const found = findProduct(turn.content);
+        if (found) lastProduct = found;
+      }
+    }
+    if (lastProduct) {
+      const reply = productReply(lastProduct);
+      return {
+        ...reply,
+        text: `About ${lastProduct.name} — ${stripProductPrefix(reply.text)}`,
+        intent: "product-followup",
+      };
+    }
+  }
+
+  return null;
+}
+
+function stripProductPrefix(text: string): string {
+  // productReply starts with "Medivyx offers {name} — …"; drop that head
+  // because we already name the product in the follow-up prefix.
+  const dash = text.indexOf(" — ");
+  return dash >= 0 ? text.slice(dash + 3) : text;
 }
 
 /** Opening chips shown when the chat starts (research.md §27). */

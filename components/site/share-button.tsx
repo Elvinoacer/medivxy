@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Check, Link2, Share2 } from "lucide-react";
 import { track } from "@/lib/analytics";
 
@@ -35,9 +36,12 @@ export function ShareButton({
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      toast.success("Link copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* clipboard blocked — nothing further to do */
+      toast.error("Couldn't copy the link", {
+        description: "Your browser blocked clipboard access — long-press the page URL instead.",
+      });
     }
   }
 

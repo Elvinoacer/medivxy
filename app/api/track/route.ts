@@ -50,7 +50,8 @@ export async function POST(request: Request) {
   try {
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-    if (!rateLimit(`track:${ip}`, 120, 60_000)) {
+    const rl = rateLimit(`track:${ip}`, 120, 60_000);
+    if (!rl.ok) {
       return new NextResponse(null, { status: 202 });
     }
     const json = await request.json().catch(() => null);

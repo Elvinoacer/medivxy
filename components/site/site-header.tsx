@@ -17,7 +17,8 @@ import { SiteSearch } from "@/components/site/site-search";
 import { useChatbot } from "@/components/site/chatbot-context";
 import { useLanguage } from "@/components/site/language-provider";
 import { LanguageToggle } from "@/components/site/language-toggle";
-import { business } from "@/lib/business";
+import { business, whatsappLink } from "@/lib/business";
+import { track } from "@/lib/analytics";
 import { useOpenStatus } from "@/lib/open-status";
 import { useCurrentPath } from "@/components/site/use-current-path";
 import { ThemeToggle } from "@/components/site/theme-toggle";
@@ -25,6 +26,8 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/", labelKey: "nav.home" },
+  { href: "/book", labelKey: "nav.book" },
+  { href: "/track", labelKey: "nav.track" },
   { href: "/about", labelKey: "nav.about" },
   { href: "/services", labelKey: "nav.services" },
   { href: "/pharmacy", labelKey: "nav.pharmacy" },
@@ -32,6 +35,12 @@ const NAV_ITEMS = [
   { href: "/health-information", labelKey: "nav.health" },
   { href: "/contact", labelKey: "nav.contact" },
 ];
+
+/** Core links shown in the condensed lg–xl desktop nav. Between 1024–1279px
+ *  there was previously NO desktop nav (hamburger only) and no bottom bar —
+ *  a tablet dead zone. Book/Track (the two core actions) plus the main
+ *  destinations now appear from lg; the full set from xl. */
+const NAV_CORE = new Set(["/book", "/track", "/services", "/products", "/contact"]);
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -109,12 +118,40 @@ export function SiteHeader() {
             <Logo />
           </SiteLink>
 
-          <nav aria-label="Main navigation" className="hidden xl:block">
-            <ul className="flex items-center gap-1">
-              {NAV_ITEMS.filter((item) => item.href !== "/").map((item) => {
+          <nav aria-label="Main navigation" className="hidden min-w-0 lg:block">
+            <ul className="flex items-center gap-0.5">
+              {NAV_ITEMS.filter(
+                (item) => item.href !== "/" && (NAV_CORE.has(item.href) || undefined)
+              ).map((item) => {
                 const active = isNavActive(item.href);
                 return (
                   <li key={item.href}>
+                    <SiteLink
+                      href={item.href}
+                      trackLabel={`nav-${t(item.labelKey).toLowerCase()}`}
+                      ariaLabel={active ? `${t(item.labelKey)} (current page)` : undefined}
+                      className={cn(
+                        "whitespace-nowrap rounded-full px-2.5 py-2 text-sm font-medium transition-colors",
+                        active
+                          ? "bg-primary/10 text-primary"
+                          : "text-foreground/80 hover:bg-secondary hover:text-secondary-foreground",
+                      )}
+                    >
+                      {t(item.labelKey)}
+                    </SiteLink>
+                  </li>
+                );
+              })}
+              {/* Extended links — full navigation from xl (hidden at lg
+                  where only the core set fits alongside the header actions). */}
+              {NAV_ITEMS.filter(
+                (item) =>
+                  item.href !== "/" &&
+                  !NAV_CORE.has(item.href)
+              ).map((item) => {
+                const active = isNavActive(item.href);
+                return (
+                  <li key={item.href} className="hidden xl:block">
                     <SiteLink
                       href={item.href}
                       trackLabel={`nav-${t(item.labelKey).toLowerCase()}`}
@@ -223,6 +260,27 @@ export function SiteHeader() {
                     })}
                   </ul>
                   <div className="mt-2 flex flex-col gap-2 border-t p-4">
+                    <a
+                      href={business.phoneHref}
+                      onClick={() => track("call_click", { source: "mobile-sheet" })}
+                      className="flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-semibold text-foreground/85 transition-colors hover:bg-secondary"
+                    >
+                      <Phone aria-hidden="true" className="size-4 text-primary" />
+                      Call {business.phone}
+                    </a>
+                    <a
+                      href={whatsappLink()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        track("whatsapp_click", { source: "mobile-sheet" });
+                        setOpen(false);
+                      }}
+                      className="flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-semibold text-foreground/85 transition-colors hover:bg-secondary"
+                    >
+                      <MessageCircleHeart aria-hidden="true" className="size-4 text-primary" />
+                      WhatsApp us
+                    </a>
                     <Button
                       onClick={() => {
                         setOpen(false);

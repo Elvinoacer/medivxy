@@ -280,7 +280,7 @@ export function SiteSearch({
                   track("whatsapp_click", { source: "search-empty" });
                   onOpenChange(false);
                 }}
-                className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#1faa53] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#199047]"
+                className="wa-cta mt-4 inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm"
               >
                 <MessageCircle aria-hidden="true" className="size-4" />
                 Ask on WhatsApp

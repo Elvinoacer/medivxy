@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getBotReply } from "@/lib/chatbot";
-import { rateLimit } from "@/lib/rate-limit";
+import { getBotReply, type ChatHistoryTurn } from "@/lib/chatbot";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { maybeTrackReply } from "@/lib/request-status";
 
 export const runtime = "nodejs";
 
+const HistorySchema = z.object({
+  role: z.enum(["user", "bot"]),
+  content: z.string().max(2000),
+  suggestions: z.array(z.string().max(200)).max(8).optional(),
+});
+
 const BodySchema = z.object({
   message: z.string().trim().min(1).max(400),
+  history: z.array(HistorySchema).max(12).optional(),
 });
 
 /**
@@ -23,11 +30,9 @@ export async function POST(request: Request) {
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
 
-    if (!rateLimit(`chat:${ip}`, 20, 60_000)) {
-      return NextResponse.json(
-        { error: "Too many messages — please take a short pause." },
-        { status: 429 }
-      );
+    const rl = rateLimit(`chat:${ip}`, 20, 60_000);
+    if (!rl.ok) {
+      return rateLimitResponse(rl.retryAfterSec, "Too many messages.");
     }
 
     const json = await request.json().catch(() => null);
@@ -39,7 +44,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const reply = getBotReply(parsed.data.message);
+    // Conversation context (last turns) lets the engine resolve follow-ups
+    // like "yes" or "how much is it?" instead of falling back to "not sure".
+    const history: ChatHistoryTurn[] = (parsed.data.history ?? [])
+      .slice(-8)
+      .map((h) => ({ role: h.role, content: h.content, suggestions: h.suggestions }));
+
+    const reply = getBotReply(parsed.data.message, history);
 
     // Reference codes (MDX-XXXX) get a deterministic, data-grounded answer
     // from the tracking store — but safety replies always win.

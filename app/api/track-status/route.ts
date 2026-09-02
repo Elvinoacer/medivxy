@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { findMedicineRequest, normalizeReference } from "@/lib/submissions";
 import { findBooking, normalizeBookingReference } from "@/lib/bookings";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -16,11 +16,9 @@ export const runtime = "nodejs";
 export async function GET(request: Request) {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  if (!rateLimit(`track-status:${ip}`, 20, 60_000)) {
-    return NextResponse.json(
-      { found: false, error: "Too many lookups — please wait a moment." },
-      { status: 429 }
-    );
+  const rl = rateLimit(`track-status:${ip}`, 20, 60_000);
+  if (!rl.ok) {
+    return rateLimitResponse(rl.retryAfterSec, "Too many lookups.");
   }
 
   const ref = new URL(request.url).searchParams.get("ref") ?? "";

@@ -88,7 +88,7 @@ export function ProductCard({
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => track("whatsapp_click", { source: "product-card", product: product.slug })}
-          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[#1faa53] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#199047] active:scale-[0.98]"
+          className="wa-cta inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold shadow-sm active:scale-[0.98]"
           aria-label={`Ask about availability of ${product.name} on WhatsApp`}
         >
           <MessageCircle aria-hidden="true" className="size-4" />

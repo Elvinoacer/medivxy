@@ -6,6 +6,82 @@ A modern, mobile-first pharmacy & healthcare website for **Medivyx Medical Care 
 
 ---
 
+## UX & flow improvements (this revision)
+
+A focused pass over user flows, data flows and the UI layer. Design rules
+extracted from it live in **`docs/ui-guidelines.md`**.
+
+**Bugs fixed**
+
+- `MDX-DEMO` tracking chip resolved to "couldn't find" on fresh clones — the
+  demo store is now seeded automatically (and shipped in `data/`).
+- The track page's booking card pre-filled a *medicine-request* WhatsApp
+  message; it now uses the booking template.
+- The admin session cookie was the plain string `"granted"` (forgeable) —
+  it is now an HMAC-SHA256 signature compared in constant time.
+- Booking window mismatch: the client offered 14 days while the server
+  accepted 21 — both now agree on 14.
+- "Past slot" disabling froze at page mount — the clock now refreshes
+  every 60 s.
+- Search analytics fired on **every keystroke** — now debounced (800 ms,
+  3+ chars, deduped).
+- `not-found.tsx` hardcoded the WhatsApp URL instead of `whatsappLink()`.
+
+**User flows**
+
+- Medicine-request wizard: **drafts persist** (localStorage) across
+  refreshes with a "Start over" banner; server-side field errors now map
+  onto the form and jump to the right step; honeypot; `maxLength` +
+  "N left" counters; onBlur validation; mobile users see the current step
+  label, not just dots.
+- Booking form: honeypot, character counter, consistent error wiring,
+  confirmation toasts.
+- Contact form: server (zod) errors map to per-field highlights; "Send
+  another message" reset; character counter.
+- Track page: network failures during polling no longer look like the
+  order vanished (card is kept + toast); "updated Xh ago" rolls to hours.
+- Chatbot: **multi-turn context** — "yes" resolves to the last suggested
+  topic, and "how much is it?" re-resolves against the last mentioned
+  product.
+- Toast system (sonner) wired up everywhere (success, network errors,
+  rate limits with "try again in Xs", admin actions, copy-to-clipboard).
+
+**Navigation**
+
+- Book & Track join the desktop nav (core set visible from `lg`, full set
+  from `xl` — previously 1024–1279 px had no desktop nav at all).
+- Mobile bottom bar now carries the flagship actions: Home · Request ·
+  Book · Track · Call (WhatsApp stays on the FAB).
+- `/admin` is linked ("Staff") from the footer instead of being orphaned.
+
+**Admin dashboard**
+
+- Status changes are reversible (Undo) and confirmed with toasts; failed
+  actions surface errors instead of silently keeping stale UI.
+- Queues are searchable (reference / name / medicine / consult) with a
+  clear-filter empty state; a load-error banner with Retry.
+
+**Data flows**
+
+- JSON stores write **atomically** (temp file + rename) and return
+  success/failure — API routes now tell the customer when a submission
+  wasn't saved instead of losing it silently.
+- Rate-limited responses send `Retry-After` headers + friendly copy.
+- Shared validators (`lib/validation.ts`) — one phone regex and one set of
+  field lengths for every form and route.
+- Contact API maps zod issues to per-field errors (same shape the client
+  uses).
+
+**UI**
+
+- Dark mode repaired: ~45 hardcoded `bg-white` usages replaced with theme
+  tokens; the WhatsApp brand button is one shared `.wa-cta` class instead
+  of eight hand-copied hex utilities.
+- Added `app/error.tsx` (friendly error boundary with reset + contact
+  actions) and `app/loading.tsx` (layout-stable skeletons).
+
+---
+
 ## Quick start
 
 ```bash

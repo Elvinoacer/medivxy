@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import {
   Eye,
   MessageCircle,
@@ -28,6 +29,8 @@ import {
   Download,
   Languages,
   MailPlus,
+  Undo2,
+  AlertTriangle,
 } from "lucide-react";
 import { PageHero } from "@/components/site/page-hero";
 import { Button } from "@/components/ui/button";
@@ -211,6 +214,12 @@ export function AdminView() {
   const [updatingBookingRef, setUpdatingBookingRef] = useState<string | null>(null);
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[] | null>(null);
 
+  // Queue filters + load errors — previously a failed fetch silently kept
+  // stale data with no hint that anything was wrong.
+  const [requestFilter, setRequestFilter] = useState("");
+  const [bookingFilter, setBookingFilter] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   // Gate state
   const [passcode, setPasscode] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -238,9 +247,14 @@ export function AdminView() {
         setAuth("locked");
         return;
       }
-      if (res.ok) setStats((await res.json()) as Stats);
+      if (res.ok) {
+        setStats((await res.json()) as Stats);
+        setLoadError(null);
+      } else {
+        setLoadError("The analytics service returned an error — showing the last successful numbers.");
+      }
     } catch {
-      // keep previous stats on refresh failure
+      setLoadError("Couldn't reach the analytics service — showing the last successful numbers.");
     } finally {
       setLoading(false);
     }
@@ -256,9 +270,12 @@ export function AdminView() {
       if (res.ok) {
         const data = (await res.json()) as { requests?: MedicineRequestFull[] };
         setRequests(data.requests ?? []);
+        setLoadError(null);
+      } else {
+        setLoadError("The medicine-request queue failed to load — try Refresh.");
       }
     } catch {
-      // keep previous list
+      setLoadError("The medicine-request queue failed to load — try Refresh.");
     }
   }
 
@@ -272,9 +289,12 @@ export function AdminView() {
       if (res.ok) {
         const data = (await res.json()) as { bookings?: BookingFull[] };
         setBookings(data.bookings ?? []);
+        setLoadError(null);
+      } else {
+        setLoadError("The bookings queue failed to load — try Refresh.");
       }
     } catch {
-      // keep previous list
+      setLoadError("The bookings queue failed to load — try Refresh.");
     }
   }
 
@@ -347,9 +367,13 @@ export function AdminView() {
     setSubscribers(null);
   }
 
-  async function advanceStatus(request: MedicineRequestFull) {
-    const idx = STATUS_ORDER.indexOf(request.status);
-    const next = STATUS_ORDER[Math.min(idx + 1, STATUS_ORDER.length - 1)];
+  /** Generic status setter for medicine requests (advance OR undo —
+   *  previously a misclick was irreversible in the UI). */
+  async function setRequestStatus(
+    request: MedicineRequestFull,
+    next: MedicineRequestStatus,
+    undoing = false
+  ) {
     if (next === request.status) return;
     setUpdatingRef(request.reference);
     try {
@@ -370,18 +394,41 @@ export function AdminView() {
               r.reference === data.request!.reference ? data.request! : r
             )
           );
+          toast.success(
+            undoing
+              ? `${request.reference} moved back to "${STATUS_META[next].label}"`
+              : `${request.reference} marked "${STATUS_META[next].label}"`,
+            { description: "The public tracking page updates within 30 seconds." }
+          );
         }
+      } else {
+        toast.error(`Couldn't update ${request.reference} — please try again.`);
       }
     } catch {
-      // optimistic UI untouched; next refresh syncs
+      toast.error(`Couldn't update ${request.reference} — network error.`);
     } finally {
       setUpdatingRef(null);
     }
   }
 
-  async function advanceBooking(booking: BookingFull) {
-    const idx = BOOKING_STATUS_ORDER.indexOf(booking.status);
-    const next = BOOKING_STATUS_ORDER[Math.min(idx + 1, BOOKING_STATUS_ORDER.length - 1)];
+  function advanceStatus(request: MedicineRequestFull) {
+    const idx = STATUS_ORDER.indexOf(request.status);
+    const next = STATUS_ORDER[Math.min(idx + 1, STATUS_ORDER.length - 1)];
+    return setRequestStatus(request, next);
+  }
+
+  function revertStatus(request: MedicineRequestFull) {
+    const idx = STATUS_ORDER.indexOf(request.status);
+    const prev = STATUS_ORDER[Math.max(idx - 1, 0)];
+    return setRequestStatus(request, prev, true);
+  }
+
+  /** Generic status setter for bookings (advance OR undo). */
+  async function setBookingStatus(
+    booking: BookingFull,
+    next: BookingStatus,
+    undoing = false
+  ) {
     if (next === booking.status) return;
     setUpdatingBookingRef(booking.reference);
     try {
@@ -402,14 +449,59 @@ export function AdminView() {
               b.reference === data.booking!.reference ? data.booking! : b
             )
           );
+          toast.success(
+            undoing
+              ? `${booking.reference} moved back to "${BOOKING_STATUS_META[next].label}"`
+              : `${booking.reference} marked "${BOOKING_STATUS_META[next].label}"`,
+            { description: "The public tracking page updates within 30 seconds." }
+          );
         }
+      } else {
+        toast.error(`Couldn't update ${booking.reference} — please try again.`);
       }
     } catch {
-      // optimistic UI untouched; next refresh syncs
+      toast.error(`Couldn't update ${booking.reference} — network error.`);
     } finally {
       setUpdatingBookingRef(null);
     }
   }
+
+  function advanceBooking(booking: BookingFull) {
+    const idx = BOOKING_STATUS_ORDER.indexOf(booking.status);
+    const next = BOOKING_STATUS_ORDER[Math.min(idx + 1, BOOKING_STATUS_ORDER.length - 1)];
+    return setBookingStatus(booking, next);
+  }
+
+  function revertBooking(booking: BookingFull) {
+    const idx = BOOKING_STATUS_ORDER.indexOf(booking.status);
+    const prev = BOOKING_STATUS_ORDER[Math.max(idx - 1, 0)];
+    return setBookingStatus(booking, prev, true);
+  }
+
+  // Queue search filters (reference, name, medicine text…).
+  const visibleRequests = useMemo(() => {
+    if (!requests) return null;
+    const q = requestFilter.trim().toLowerCase();
+    if (!q) return requests;
+    return requests.filter((r) =>
+      [r.reference, r.medicine, r.fullName, r.phone, r.notes]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [requests, requestFilter]);
+
+  const visibleBookings = useMemo(() => {
+    if (!bookings) return null;
+    const q = bookingFilter.trim().toLowerCase();
+    if (!q) return bookings;
+    return bookings.filter((b) =>
+      [b.reference, consultLabel(b.consultType), b.fullName, b.phone, b.notes]
+        .join(" ")
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [bookings, bookingFilter]);
 
   const maxWeek = Math.max(1, ...(stats?.weekly.map((w) => w.views) ?? [1]));
 
@@ -533,7 +625,8 @@ export function AdminView() {
                   )}
                 </Button>
                 <p className="mt-4 text-center text-xs text-muted-foreground">
-                  Sessions last 8 hours and only store a “granted” cookie — no
+                  Sessions last 8 hours — the cookie is HMAC-signed with the
+                  passcode, so it can&apos;t be forged without knowing it. No
                   passwords are saved.
                 </p>
               </form>
@@ -566,6 +659,32 @@ export function AdminView() {
 
       <section className="bg-background">
         <div className="mx-auto max-w-6xl px-4 py-12 pb-20 sm:px-6 sm:py-16">
+          {/* Load error banner — fetch failures were previously silent */}
+          {loadError && (
+            <div
+              role="alert"
+              className="mb-6 flex items-start gap-3 rounded-2xl border border-honey-soft bg-honey-soft/30 p-4 text-sm text-accent-foreground"
+            >
+              <AlertTriangle aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">Some data couldn&apos;t be refreshed</p>
+                <p className="mt-0.5 text-sm">{loadError}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 shrink-0 rounded-full px-3 text-xs"
+                onClick={() => {
+                  setLoadError(null);
+                  refresh();
+                }}
+              >
+                <RefreshCw aria-hidden="true" className="size-3.5" />
+                Retry
+              </Button>
+            </div>
+          )}
+
           {/* The demo moment */}
           <Reveal>
             <div className="rounded-3xl bg-primary p-8 text-primary-foreground shadow-lg sm:p-10">
@@ -633,7 +752,7 @@ export function AdminView() {
                   <h2 className="font-display text-lg font-semibold">
                     Medicine requests
                   </h2>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <p className="hidden text-xs text-muted-foreground lg:block">
                       Status updates appear instantly on the public tracking
                       page.
@@ -645,11 +764,44 @@ export function AdminView() {
                   </div>
                 </div>
 
+                {/* Queue search — find a request by reference, name or medicine */}
+                {requests !== null && requests.length > 3 && (
+                  <div className="mt-4 flex max-w-sm items-center gap-2 rounded-full border bg-background px-4 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                    <label htmlFor="requests-filter" className="sr-only">
+                      Filter medicine requests
+                    </label>
+                    <Search aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+                    <input
+                      id="requests-filter"
+                      type="search"
+                      value={requestFilter}
+                      onChange={(e) => setRequestFilter(e.target.value.slice(0, 60))}
+                      placeholder="Filter by reference, name, medicine…"
+                      className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
+                      autoComplete="off"
+                    />
+                  </div>
+                )}
+
                 {requests === null ? (
                   <div className="mt-5 space-y-3">
                     <Skeleton className="h-20 rounded-xl" />
                     <Skeleton className="h-20 rounded-xl" />
                     <Skeleton className="h-20 rounded-xl" />
+                  </div>
+                ) : visibleRequests && visibleRequests.length === 0 ? (
+                  <div className="mt-6 rounded-xl border border-dashed p-8 text-center">
+                    <Search aria-hidden="true" className="mx-auto size-8 text-muted-foreground/60" />
+                    <p className="mt-3 text-sm font-medium text-foreground">
+                      No requests match “{requestFilter.trim()}”
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setRequestFilter("")}
+                      className="mt-2 text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                    >
+                      Clear the filter
+                    </button>
                   </div>
                 ) : requests.length === 0 ? (
                   <div className="mt-6 rounded-xl border border-dashed p-8 text-center">
@@ -664,10 +816,11 @@ export function AdminView() {
                   </div>
                 ) : (
                   <ul className="mt-5 space-y-3" aria-label="Medicine request queue">
-                    {requests.map((r) => {
+                    {(visibleRequests ?? []).map((r) => {
                       const meta = STATUS_META[r.status];
                       const nextLabel = NEXT_STATUS_LABEL[r.status];
                       const busy = updatingRef === r.reference;
+                      const canUndo = STATUS_ORDER.indexOf(r.status) > 0;
                       return (
                         <li
                           key={r.reference}
@@ -721,6 +874,24 @@ export function AdminView() {
                               )}
                             </div>
                             <div className="flex shrink-0 items-center gap-2">
+                              {canUndo && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-10 rounded-full px-3"
+                                  onClick={() => void revertStatus(r)}
+                                  disabled={busy}
+                                  aria-label={`Move ${r.reference} back one step`}
+                                  title="Undo — move this request back one step"
+                                >
+                                  {busy ? (
+                                    <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                                  ) : (
+                                    <Undo2 aria-hidden="true" className="size-3.5" />
+                                  )}
+                                  <span className="sr-only sm:not-sr-only">Undo</span>
+                                </Button>
+                              )}
                               {nextLabel ? (
                                 <Button
                                   size="sm"
@@ -760,7 +931,7 @@ export function AdminView() {
                   <h2 className="font-display text-lg font-semibold">
                     Consultation bookings
                   </h2>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <p className="hidden text-xs text-muted-foreground lg:block">
                       Free pharmacist consultations — confirm the slot, then
                       mark it done.
@@ -772,10 +943,43 @@ export function AdminView() {
                   </div>
                 </div>
 
+                {/* Queue search — find a booking by reference, name or type */}
+                {bookings !== null && bookings.length > 3 && (
+                  <div className="mt-4 flex max-w-sm items-center gap-2 rounded-full border bg-background px-4 transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                    <label htmlFor="bookings-filter" className="sr-only">
+                      Filter consultation bookings
+                    </label>
+                    <Search aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+                    <input
+                      id="bookings-filter"
+                      type="search"
+                      value={bookingFilter}
+                      onChange={(e) => setBookingFilter(e.target.value.slice(0, 60))}
+                      placeholder="Filter by reference, name, consult…"
+                      className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
+                      autoComplete="off"
+                    />
+                  </div>
+                )}
+
                 {bookings === null ? (
                   <div className="mt-5 space-y-3">
                     <Skeleton className="h-20 rounded-xl" />
                     <Skeleton className="h-20 rounded-xl" />
+                  </div>
+                ) : visibleBookings && visibleBookings.length === 0 ? (
+                  <div className="mt-6 rounded-xl border border-dashed p-8 text-center">
+                    <Search aria-hidden="true" className="mx-auto size-8 text-muted-foreground/60" />
+                    <p className="mt-3 text-sm font-medium text-foreground">
+                      No bookings match “{bookingFilter.trim()}”
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setBookingFilter("")}
+                      className="mt-2 text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                    >
+                      Clear the filter
+                    </button>
                   </div>
                 ) : bookings.length === 0 ? (
                   <div className="mt-6 rounded-xl border border-dashed p-8 text-center">
@@ -790,11 +994,12 @@ export function AdminView() {
                   </div>
                 ) : (
                   <ul className="mt-5 space-y-3" aria-label="Consultation booking queue">
-                    {bookings.map((b) => {
+                    {(visibleBookings ?? []).map((b) => {
                       const meta = BOOKING_STATUS_META[b.status];
                       const nextLabel = BOOKING_NEXT_LABEL[b.status];
                       const busy = updatingBookingRef === b.reference;
                       const past = bookingPast(b);
+                      const canUndo = BOOKING_STATUS_ORDER.indexOf(b.status) > 0;
                       return (
                         <li
                           key={b.reference}
@@ -838,6 +1043,24 @@ export function AdminView() {
                               )}
                             </div>
                             <div className="flex shrink-0 items-center gap-2">
+                              {canUndo && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-10 rounded-full px-3"
+                                  onClick={() => void revertBooking(b)}
+                                  disabled={busy}
+                                  aria-label={`Move ${b.reference} back one step`}
+                                  title="Undo — move this booking back one step"
+                                >
+                                  {busy ? (
+                                    <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                                  ) : (
+                                    <Undo2 aria-hidden="true" className="size-3.5" />
+                                  )}
+                                  <span className="sr-only sm:not-sr-only">Undo</span>
+                                </Button>
+                              )}
                               {nextLabel ? (
                                 <Button
                                   size="sm"

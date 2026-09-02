@@ -41,7 +41,7 @@ export function WhatsAppFab() {
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => track("whatsapp_click", { source: "fab" })}
-          className="flex min-h-14 items-center gap-2 rounded-full bg-[#1faa53] px-4 py-3 font-semibold text-white shadow-lg shadow-[#1faa53]/30 transition-transform hover:scale-[1.03] active:scale-95"
+          className="wa-cta flex min-h-14 items-center gap-2 rounded-full px-4 py-3 font-semibold shadow-lg shadow-[#1faa53]/30 hover:scale-[1.03]"
           aria-label="Chat with Medivyx on WhatsApp"
         >
           <MessageCircle aria-hidden="true" className="size-5" />

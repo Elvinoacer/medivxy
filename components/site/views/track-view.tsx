@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { whatsappLink, whatsappMessages } from "@/lib/business";
 import {
   bookingCalendarLinks,
+  bookingSummary,
   consultLabel,
   consultMinutes,
   slotLabel,
@@ -30,6 +31,7 @@ import {
 import { track } from "@/lib/analytics";
 import { useLanguage } from "@/components/site/language-provider";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { BookingPublic, MedicineRequestPublic } from "@/lib/types";
 
 /** Reference codes used for the on-page demo hints (seeded in the demo store). */
@@ -74,7 +76,11 @@ function formatAgo(at: number | null, now: number): string {
   const seconds = Math.max(0, Math.round((now - at) / 1000));
   if (seconds < 10) return "just now";
   if (seconds < 60) return `${seconds}s ago`;
-  return `${Math.floor(seconds / 60)}m ago`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
 }
 
 type LookupResult =
@@ -232,6 +238,16 @@ export function TrackView({ initialRef }: { initialRef?: string }) {
     setRefreshing(true);
     try {
       const outcome = await fetchTrackResult(ref);
+      if (outcome.kind === "not-found") {
+        // Distinguish a genuine 404 from a network failure so a silent
+        // dead poll doesn't look like the request disappeared.
+        if (outcome.message.includes("Network")) {
+          toast.error("Couldn't refresh right now", {
+            description: "We'll keep trying automatically every 30 seconds.",
+          });
+        }
+        return; // keep the current card — a transient failure shouldn't wipe it
+      }
       mergeOutcome(outcome);
     } finally {
       inFlightRef.current = false;
@@ -618,7 +634,10 @@ export function TrackView({ initialRef }: { initialRef?: string }) {
                     <Button asChild className="rounded-full px-6">
                       <a
                         href={whatsappLink(
-                          whatsappMessages.request(result.booking.reference)
+                          whatsappMessages.booking(
+                            result.booking.reference,
+                            bookingSummary(result.booking).toLowerCase()
+                          )
                         )}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -664,7 +683,7 @@ export function TrackView({ initialRef }: { initialRef?: string }) {
                       onClick={() =>
                         track("whatsapp_click", { source: "track-notfound" })
                       }
-                      className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#1faa53] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#199047]"
+                      className="wa-cta inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm"
                     >
                       <MessageCircle aria-hidden="true" className="size-4" />
                       Ask on WhatsApp

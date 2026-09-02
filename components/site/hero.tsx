@@ -35,7 +35,7 @@ export function Hero() {
           {/* Copy */}
           <div>
             <Reveal>
-              <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white/70 px-4 py-1.5 text-xs font-semibold text-primary shadow-sm">
+              <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-card/70 px-4 py-1.5 text-xs font-semibold text-primary shadow-sm">
                 <MapPin aria-hidden="true" className="size-3.5" />
                 {business.area} • {business.city}
               </p>
@@ -144,7 +144,7 @@ export function Hero() {
               </div>
 
               {/* Floating cards */}
-              <div className="float-soft absolute -bottom-5 left-4 hidden rounded-2xl bg-white/95 px-4 py-3 shadow-lg ring-1 ring-border backdrop-blur sm:block">
+              <div className="float-soft absolute -bottom-5 left-4 hidden rounded-2xl bg-card/95 px-4 py-3 shadow-lg ring-1 ring-border backdrop-blur sm:block">
                 <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <MessageCircle aria-hidden="true" className="size-4" />

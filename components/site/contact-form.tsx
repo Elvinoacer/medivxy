@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Check, Loader2, MessageCircle } from "lucide-react";
+import { toast } from "sonner";
+import { Check, Loader2, MessageCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,8 @@ import {
 } from "@/components/ui/select";
 import { business, whatsappLink, whatsappMessages } from "@/lib/business";
 import { track } from "@/lib/analytics";
+import { isValidKenyanPhone, LENGTHS } from "@/lib/validation";
+import { cn } from "@/lib/utils";
 
 const REASONS = [
   "General question",
@@ -24,6 +27,23 @@ const REASONS = [
   "Feedback",
   "Business enquiry",
 ] as const;
+
+/** Subtle character counter — appears once the message nears its limit. */
+function MessageCount({ value, max }: { value: number; max: number }) {
+  const remaining = max - value;
+  if (remaining > 300) return null;
+  return (
+    <span
+      className={cn(
+        "text-xs tabular-nums",
+        remaining <= 50 ? "font-semibold text-destructive" : "text-muted-foreground"
+      )}
+      aria-hidden="true"
+    >
+      {remaining} left
+    </span>
+  );
+}
 
 /** Contact form (research.md §17) — with server-side validation. */
 export function ContactForm() {
@@ -44,15 +64,19 @@ export function ContactForm() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     const next: Record<string, string> = {};
-    if (values.name.trim().length < 2) next.name = "Please enter your name.";
-    if (!/^(?:\+?254|0)\d{9}$/.test(values.phone.replace(/\s+/g, "")))
+    if (values.name.trim().length < LENGTHS.fullName.min)
+      next.name = "Please enter your name.";
+    if (!isValidKenyanPhone(values.phone))
       next.phone = "Please enter a valid phone number.";
     if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
       next.email = "Please enter a valid email address.";
-    if (values.message.trim().length < 10)
-      next.message = "Please write a short message (at least 10 characters).";
+    if (values.message.trim().length < LENGTHS.contactMessage.min)
+      next.message = `Please write a short message (at least ${LENGTHS.contactMessage.min} characters).`;
     setErrors(next);
-    if (Object.keys(next).length > 0) return;
+    if (Object.keys(next).length > 0) {
+      toast.error("Please check the highlighted fields.");
+      return;
+    }
 
     setStatus("sending");
     try {
@@ -61,12 +85,35 @@ export function ContactForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
-      if (!res.ok) throw new Error();
+      const data = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+        fields?: Record<string, string>;
+      };
+      if (!res.ok || !data?.ok) {
+        // Server-side (zod) field errors map onto the same highlights the
+        // client uses — previously the server reply was a generic sentence.
+        if (data?.fields && Object.keys(data.fields).length > 0) {
+          setErrors(data.fields);
+          toast.error("Please check the highlighted fields.");
+        } else {
+          setErrors({ submit: data?.error ?? "Message failed to send. Please try again." });
+          toast.error(data?.error ?? "Message failed to send. Please try again.");
+        }
+        setStatus("idle");
+        return;
+      }
       track("contact_submit", { reason: values.reason });
       setStatus("sent");
+      toast.success("Message sent", {
+        description: "The Medivyx team will get back to you during opening hours.",
+      });
     } catch {
       setStatus("idle");
-      setErrors({ submit: "Message failed to send. Please try again or reach us on WhatsApp." });
+      setErrors({ submit: "Network error — please try again or reach us on WhatsApp." });
+      toast.error("Network error", {
+        description: "We couldn't reach the server. Please check your connection and try again.",
+      });
     }
   }
 
@@ -83,17 +130,39 @@ export function ContactForm() {
           Thank you, {values.name.split(" ")[0]}. The Medivyx team will get
           back to you shortly during opening hours.
         </p>
-        <Button asChild variant="outline" className="mt-6 rounded-full">
-          <a
-            href={whatsappLink(whatsappMessages.general)}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track("whatsapp_click", { source: "contact-success" })}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <Button asChild variant="outline" className="rounded-full">
+            <a
+              href={whatsappLink(whatsappMessages.general)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => track("whatsapp_click", { source: "contact-success" })}
+            >
+              <MessageCircle aria-hidden="true" className="size-4" />
+              Message us on WhatsApp instead
+            </a>
+          </Button>
+          <Button
+            variant="ghost"
+            className="rounded-full"
+            onClick={() => {
+              // Same reset pattern as the booking form's "Book another".
+              setValues({
+                name: "",
+                phone: "",
+                email: "",
+                reason: "",
+                message: "",
+                website: "",
+              });
+              setErrors({});
+              setStatus("idle");
+            }}
           >
-            <MessageCircle aria-hidden="true" className="size-4" />
-            Message us on WhatsApp instead
-          </a>
-        </Button>
+            <RotateCcw aria-hidden="true" className="size-4" />
+            Send another message
+          </Button>
+        </div>
       </div>
     );
   }
@@ -129,11 +198,13 @@ export function ContactForm() {
             value={values.name}
             onChange={(e) => set("name", e.target.value)}
             autoComplete="name"
-            className="mt-2 bg-white"
+            maxLength={LENGTHS.fullName.max}
+            className="mt-2 bg-background"
             aria-invalid={!!errors.name}
+            aria-describedby={errors.name ? "contact-name-error" : undefined}
           />
           {errors.name && (
-            <p role="alert" className="mt-1.5 text-sm text-destructive">{errors.name}</p>
+            <p id="contact-name-error" role="alert" className="mt-1.5 text-sm text-destructive">{errors.name}</p>
           )}
         </div>
         <div>
@@ -145,11 +216,13 @@ export function ContactForm() {
             onChange={(e) => set("phone", e.target.value)}
             autoComplete="tel"
             placeholder="07XX XXX XXX"
-            className="mt-2 bg-white"
+            maxLength={16}
+            className="mt-2 bg-background"
             aria-invalid={!!errors.phone}
+            aria-describedby={errors.phone ? "contact-phone-error" : undefined}
           />
           {errors.phone && (
-            <p role="alert" className="mt-1.5 text-sm text-destructive">{errors.phone}</p>
+            <p id="contact-phone-error" role="alert" className="mt-1.5 text-sm text-destructive">{errors.phone}</p>
           )}
         </div>
         <div>
@@ -162,17 +235,19 @@ export function ContactForm() {
             value={values.email}
             onChange={(e) => set("email", e.target.value)}
             autoComplete="email"
-            className="mt-2 bg-white"
+            maxLength={120}
+            className="mt-2 bg-background"
             aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "contact-email-error" : undefined}
           />
           {errors.email && (
-            <p role="alert" className="mt-1.5 text-sm text-destructive">{errors.email}</p>
+            <p id="contact-email-error" role="alert" className="mt-1.5 text-sm text-destructive">{errors.email}</p>
           )}
         </div>
         <div>
           <Label htmlFor="contact-reason">Reason for contacting us</Label>
           <Select value={values.reason} onValueChange={(v) => set("reason", v)}>
-            <SelectTrigger id="contact-reason" className="mt-2 bg-white">
+            <SelectTrigger id="contact-reason" className="mt-2 bg-background">
               <SelectValue placeholder="Choose a reason" />
             </SelectTrigger>
             <SelectContent>
@@ -185,18 +260,23 @@ export function ContactForm() {
           </Select>
         </div>
         <div className="sm:col-span-2">
-          <Label htmlFor="contact-message">Message</Label>
+          <div className="flex items-baseline justify-between">
+            <Label htmlFor="contact-message">Message</Label>
+            <MessageCount value={values.message.length} max={LENGTHS.contactMessage.max} />
+          </div>
           <Textarea
             id="contact-message"
             value={values.message}
             onChange={(e) => set("message", e.target.value)}
             rows={4}
             placeholder="How can we help?"
-            className="mt-2 bg-white"
+            maxLength={LENGTHS.contactMessage.max}
+            className="mt-2 bg-background"
             aria-invalid={!!errors.message}
+            aria-describedby={errors.message ? "contact-message-error" : undefined}
           />
           {errors.message && (
-            <p role="alert" className="mt-1.5 text-sm text-destructive">{errors.message}</p>
+            <p id="contact-message-error" role="alert" className="mt-1.5 text-sm text-destructive">{errors.message}</p>
           )}
         </div>
       </div>

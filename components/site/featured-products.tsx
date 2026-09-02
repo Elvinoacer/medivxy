@@ -9,7 +9,7 @@ import { ArrowRight } from "lucide-react";
 export function FeaturedProducts() {
   const featured = getFeaturedProducts().slice(0, 6);
   return (
-    <section aria-labelledby="featured-heading" className="bg-white/70">
+    <section aria-labelledby="featured-heading" className="bg-card/60">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
         <SectionHeading
           eyebrow="Popular right now"

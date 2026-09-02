@@ -127,7 +127,7 @@ export function ArticleView({ article }: { article: Article }) {
                       {section.list.map((item) => (
                         <li
                           key={item}
-                          className="flex items-start gap-3 rounded-xl bg-white/70 p-3.5 text-sm leading-6 text-foreground/80 ring-1 ring-border/60"
+                          className="flex items-start gap-3 rounded-xl bg-card/60 p-3.5 text-sm leading-6 text-foreground/80 ring-1 ring-border/60"
                         >
                           <span
                             aria-hidden="true"
@@ -170,7 +170,7 @@ export function ArticleView({ article }: { article: Article }) {
       </article>
 
       {/* Related */}
-      <section aria-labelledby="related-articles" className="border-t bg-white/70">
+      <section aria-labelledby="related-articles" className="border-t bg-card/60">
         <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
           <h2
             id="related-articles"

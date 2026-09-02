@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import {
   ArrowRight,
   CalendarCheck,
@@ -34,6 +35,7 @@ import {
 } from "@/lib/booking-shared";
 import { business, whatsappLink, whatsappMessages } from "@/lib/business";
 import { track } from "@/lib/analytics";
+import { LENGTHS } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 
 const CONSULT_ICONS: Record<string, typeof Pill> = {
@@ -44,6 +46,23 @@ const CONSULT_ICONS: Record<string, typeof Pill> = {
 };
 
 const DAYS_AHEAD = 13; // 14 bookable days including today
+
+/** Subtle notes counter — appears once the field nears its limit. */
+function NotesCount({ value, max }: { value: number; max: number }) {
+  const remaining = max - value;
+  if (remaining > 80) return null;
+  return (
+    <span
+      className={cn(
+        "text-xs tabular-nums",
+        remaining <= 20 ? "font-semibold text-destructive" : "text-muted-foreground"
+      )}
+      aria-hidden="true"
+    >
+      {remaining} left
+    </span>
+  );
+}
 
 interface DayOption {
   iso: string; // yyyy-mm-dd
@@ -112,6 +131,14 @@ export function BookingForm() {
     init();
   }, []);
 
+  // Keep "past slot" disabling fresh: previously `nowMs` was frozen at
+  // mount, so a page left open overnight kept showing bookable past times.
+  // (Same 60s cadence as useOpenStatus.)
+  useEffect(() => {
+    const id = setInterval(() => setNowMs(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const selectedDay = useMemo(
     () => days.find((d) => d.iso === form.date) ?? null,
     [days, form.date]
@@ -157,7 +184,10 @@ export function BookingForm() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate()) {
+      toast.error("Please complete the highlighted choices.");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/book", {
@@ -170,6 +200,7 @@ export function BookingForm() {
           fullName: form.fullName,
           phone: form.phone,
           notes: form.notes,
+          website: "", // honeypot (spam defense, mirrors the contact form)
         }),
       });
       const data = (await res.json()) as {
@@ -182,13 +213,20 @@ export function BookingForm() {
       if (!res.ok || !data.ok) {
         if (data.fields) setErrors(data.fields);
         else setErrors({ submit: data.error ?? "Booking failed — please try again." });
+        toast.error(data.error ?? "Booking failed — please try again.");
         return;
       }
       track("booking_submit", { consultType: form.consultType });
       setReference(data.reference ?? "BKG-0000");
       setSummary(data.summary ?? "");
+      toast.success("Booking received", {
+        description: `${data.reference ?? "BKG-0000"} · ${data.summary ?? ""} — the team will confirm by phone or WhatsApp.`,
+      });
     } catch {
       setErrors({ submit: "Network error — please try again or message us on WhatsApp." });
+      toast.error("Network error", {
+        description: "We couldn't reach the server. Please check your connection and try again.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -280,6 +318,16 @@ export function BookingForm() {
         noValidate
         className="rounded-3xl border bg-card p-6 shadow-lg sm:p-8"
       >
+        {/* Honeypot (spam protection — hidden from humans and assistive tech) */}
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          className="hidden"
+        />
+
         {/* 1 — Consultation type */}
         <fieldset className="min-w-0">
           <legend className="font-display text-xl font-semibold">
@@ -354,7 +402,7 @@ export function BookingForm() {
             aria-label="Choose a day"
           >
             {days.length === 0
-              ? Array.from({ length: 7 }).map((_, i) => (
+              ? Array.from({ length: 14 }).map((_, i) => (
                   <div
                     key={i}
                     aria-hidden="true"
@@ -497,11 +545,13 @@ export function BookingForm() {
                 onChange={(e) => set("fullName", e.target.value)}
                 placeholder="e.g. Amina Wanjiru"
                 autoComplete="name"
-                className="mt-2 bg-white"
+                maxLength={LENGTHS.fullName.max}
+                className="mt-2 bg-background"
                 aria-invalid={!!errors.fullName}
+                aria-describedby={errors.fullName ? "booking-name-error" : undefined}
               />
               {errors.fullName && (
-                <p role="alert" className="mt-1.5 text-sm text-destructive">
+                <p id="booking-name-error" role="alert" className="mt-1.5 text-sm text-destructive">
                   {errors.fullName}
                 </p>
               )}
@@ -515,28 +565,37 @@ export function BookingForm() {
                 onChange={(e) => set("phone", e.target.value)}
                 placeholder="07XX XXX XXX"
                 autoComplete="tel"
-                className="mt-2 bg-white"
+                maxLength={16}
+                className="mt-2 bg-background"
                 aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? "booking-phone-error" : "booking-phone-hint"}
               />
-              {errors.phone && (
-                <p role="alert" className="mt-1.5 text-sm text-destructive">
+              {errors.phone ? (
+                <p id="booking-phone-error" role="alert" className="mt-1.5 text-sm text-destructive">
                   {errors.phone}
+                </p>
+              ) : (
+                <p id="booking-phone-hint" className="mt-1.5 text-xs text-muted-foreground">
+                  Kenyan number — the team confirms your slot on it.
                 </p>
               )}
             </div>
           </div>
           <div className="mt-4">
-            <Label htmlFor="booking-notes">
-              Notes <span className="font-normal text-muted-foreground">(optional)</span>
-            </Label>
+            <div className="flex items-baseline justify-between">
+              <Label htmlFor="booking-notes">
+                Notes <span className="font-normal text-muted-foreground">(optional)</span>
+              </Label>
+              <NotesCount value={form.notes.length} max={LENGTHS.bookingNotes.max} />
+            </div>
             <Textarea
               id="booking-notes"
               value={form.notes}
               onChange={(e) => set("notes", e.target.value)}
               placeholder="Anything the pharmacist should know before the consultation…"
               rows={2}
-              maxLength={500}
-              className="mt-2 bg-white"
+              maxLength={LENGTHS.bookingNotes.max}
+              className="mt-2 bg-background"
             />
           </div>
         </fieldset>
@@ -575,7 +634,8 @@ export function BookingForm() {
 
         <div className="mt-6 flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
-            The team confirms every booking — no payment needed.
+            The team confirms every booking — no payment needed. More than one
+            person can hold a slot; the pharmacist manages the queue.
           </p>
           <Button
             type="submit"

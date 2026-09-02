@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { subscribeEmail } from "@/lib/newsletter";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -13,11 +13,9 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  if (!rateLimit(`newsletter:${ip}`, 6, 60_000)) {
-    return NextResponse.json(
-      { ok: false, error: "Too many attempts — please wait a moment." },
-      { status: 429 }
-    );
+  const rl = rateLimit(`newsletter:${ip}`, 6, 60_000);
+  if (!rl.ok) {
+    return rateLimitResponse(rl.retryAfterSec, "Too many attempts.");
   }
 
   let email = "";

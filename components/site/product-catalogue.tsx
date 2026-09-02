@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, PackageSearch, Info, ArrowUpDown, RotateCcw } from "lucide-react";
 import { ProductCard } from "@/components/site/product-card";
 import { ProductCompare } from "@/components/site/product-compare";
@@ -46,6 +46,25 @@ export function ProductCatalogue({
   const [sort, setSort] = useState<SortKey>("featured");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [compareSlugs, setCompareSlugs] = useState<string[]>([]);
+
+  // Search analytics: fire once the query settles (800ms after the last
+  // keystroke, 3+ characters) and only when it changed — previously every
+  // single keystroke sent an event, drowning the dashboard in noise.
+  const searchTrackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTrackedQueryRef = useRef("");
+  useEffect(() => {
+    const q = query.trim();
+    if (q === lastTrackedQueryRef.current) return;
+    if (searchTrackRef.current) clearTimeout(searchTrackRef.current);
+    if (q.length < 3) return;
+    searchTrackRef.current = setTimeout(() => {
+      track("search", { query: q.slice(0, 60), source: "catalogue" });
+      lastTrackedQueryRef.current = q;
+    }, 800);
+    return () => {
+      if (searchTrackRef.current) clearTimeout(searchTrackRef.current);
+    };
+  }, [query]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -117,14 +136,11 @@ export function ProductCatalogue({
               id="catalogue-search"
               type="search"
               value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                if (e.target.value.length > 2)
-                  track("search", { query: e.target.value.slice(0, 60), source: "catalogue" });
-              }}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Search products…"
               className="h-12 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
               autoComplete="off"
+              aria-describedby="catalogue-count"
             />
           </div>
           <div className="flex h-12 shrink-0 items-center gap-2 rounded-full border bg-card pl-4 pr-2 shadow-sm">
@@ -194,7 +210,7 @@ export function ProductCatalogue({
           </button>
         </div>
 
-        <p aria-live="polite" className="mt-4 text-center text-xs text-muted-foreground">
+        <p id="catalogue-count" aria-live="polite" className="mt-4 text-center text-xs text-muted-foreground">
           Showing {filtered.length} of {products.length} products
         </p>
       </Reveal>
@@ -243,7 +259,7 @@ export function ProductCatalogue({
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => track("whatsapp_click", { source: "catalogue-empty" })}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#1faa53] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#199047]"
+              className="wa-cta inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm"
             >
               Ask on WhatsApp
             </a>

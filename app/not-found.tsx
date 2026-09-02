@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { whatsappLink } from "@/lib/business";
 
 export default function NotFound() {
   return (
@@ -25,7 +26,7 @@ export default function NotFound() {
         </Button>
         <Button asChild variant="outline" className="rounded-full px-6">
           <a
-            href="https://wa.me/254700000000?text=Hi%20Medivyx%2C%20I%20need%20some%20help."
+            href={whatsappLink("Hi Medivyx, I need some help.")}
             target="_blank"
             rel="noopener noreferrer"
           >

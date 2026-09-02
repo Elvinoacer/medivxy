@@ -61,7 +61,7 @@ function StylizedMap() {
           </span>
         </div>
       </div>
-      <span className="absolute bottom-2 left-2 rounded-full bg-white/90 px-2.5 py-1 text-[0.625rem] font-medium text-muted-foreground shadow-sm">
+      <span className="absolute bottom-2 left-2 rounded-full bg-card/90 px-2.5 py-1 text-[0.625rem] font-medium text-muted-foreground shadow-sm">
         Roysambu, Nairobi
       </span>
     </div>

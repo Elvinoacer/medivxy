@@ -5,7 +5,7 @@ import {
   listBookings,
   updateBookingStatus,
 } from "@/lib/bookings";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -32,11 +32,9 @@ export async function POST(request: Request) {
   }
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  if (!rateLimit(`admin-bookings:${ip}`, 60, 60_000)) {
-    return NextResponse.json(
-      { error: "Too many updates — please slow down." },
-      { status: 429 }
-    );
+  const rl = rateLimit(`admin-bookings:${ip}`, 60, 60_000);
+  if (!rl.ok) {
+    return rateLimitResponse(rl.retryAfterSec, "Too many updates.");
   }
 
   const body: unknown = await request.json().catch(() => null);

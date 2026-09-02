@@ -23,6 +23,8 @@ export const DICTIONARY: Record<string, Entry> = {
   "nav.products": { en: "Products", sw: "Bidhaa" },
   "nav.health": { en: "Health Information", sw: "Taarifa za Afya" },
   "nav.contact": { en: "Contact", sw: "Mawasiliano" },
+  "nav.book": { en: "Book", sw: "Panga" },
+  "nav.track": { en: "Track", sw: "Fuatilia" },
   "header.requestMedicine": { en: "Request Medicine", sw: "Omba Dawa" },
   "header.askMedivyx": { en: "Ask Medivyx", sw: "Uliza Medivyx" },
   "header.search": { en: "Search", sw: "Tafuta" },
@@ -99,6 +101,9 @@ export const DICTIONARY: Record<string, Entry> = {
   "mobile.home": { en: "Home", sw: "Nyumbani" },
   "mobile.services": { en: "Services", sw: "Huduma" },
   "mobile.products": { en: "Products", sw: "Bidhaa" },
+  "mobile.request": { en: "Request", sw: "Omba" },
+  "mobile.book": { en: "Book", sw: "Panga" },
+  "mobile.track": { en: "Track", sw: "Fuatilia" },
   "mobile.call": { en: "Call", sw: "Piga" },
 
   // ---- Language toggle ---------------------------------------------------------

@@ -138,6 +138,25 @@
   --sidebar-ring: oklch(0.72 0.1 165);
 }
 
+/* ---------- WhatsApp brand button (single source for all CTA links) -------
+ * One class instead of eight hand-copied `bg-[#1faa53]` utilities, so the
+ * brand treatment (colour, hover, focus) stays identical everywhere. */
+.wa-cta {
+  background-color: #1faa53;
+  color: #ffffff;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.wa-cta:hover {
+  background-color: #199047;
+}
+.wa-cta:active {
+  transform: scale(0.97);
+}
+.wa-cta:focus-visible {
+  outline: 2px solid #0c6b34;
+  outline-offset: 2px;
+}
+
 /* Dark-mode specifics for hand-set colors that don't map via tokens */
 .dark ::selection {
   background: oklch(0.72 0.1 165 / 0.3);

@@ -22,6 +22,11 @@ export type { ConsultType } from "@/lib/booking-shared";
  * Phase-4 roadmap): customers book a pharmacist consultation slot, staff
  * confirm/complete it from the admin dashboard. Files are gitignored demo
  * storage — swap for a real database + calendar before production.
+ *
+ * Improvements in this revision:
+ *  - Atomic writes (temp file + rename) — no truncated JSON on crash.
+ *  - `logBooking` returns success so the API route can surface a failure
+ *    to the customer instead of losing the booking silently.
  */
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -41,6 +46,25 @@ interface StoredBooking {
   receivedAt: string;
 }
 
+/** Atomic write: serialise to a temp file, then rename over the target. */
+async function atomicWriteJson(file: string, data: unknown): Promise<boolean> {
+  const target = path.join(DATA_DIR, file);
+  const tmp = `${target}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.writeFile(tmp, JSON.stringify(data, null, 2), "utf8");
+    await fs.rename(tmp, target);
+    return true;
+  } catch {
+    try {
+      await fs.rm(tmp, { force: true });
+    } catch {
+      // best-effort cleanup only
+    }
+    return false;
+  }
+}
+
 async function readBookings(): Promise<StoredBooking[]> {
   try {
     const list = JSON.parse(
@@ -49,20 +73,6 @@ async function readBookings(): Promise<StoredBooking[]> {
     return Array.isArray(list) ? (list as StoredBooking[]) : [];
   } catch {
     return [];
-  }
-}
-
-async function writeBookings(list: StoredBooking[]): Promise<boolean> {
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(
-      path.join(DATA_DIR, BOOKINGS_FILE),
-      JSON.stringify(list, null, 2),
-      "utf8"
-    );
-    return true;
-  } catch {
-    return false;
   }
 }
 
@@ -96,23 +106,11 @@ export async function logBooking(input: {
   fullName: string;
   phone: string;
   notes: string;
-}): Promise<void> {
+}): Promise<boolean> {
   const entry: StoredBooking = { ...input, status: "requested", receivedAt: new Date().toISOString() };
-  try {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    const target = path.join(DATA_DIR, BOOKINGS_FILE);
-    let list: StoredBooking[] = [];
-    try {
-      list = JSON.parse(await fs.readFile(target, "utf8")) as StoredBooking[];
-      if (!Array.isArray(list)) list = [];
-    } catch {
-      list = [];
-    }
-    list.push(entry);
-    await fs.writeFile(target, JSON.stringify(list, null, 2), "utf8");
-  } catch {
-    // demo store is best-effort only
-  }
+  const list = await readBookings();
+  list.push(entry);
+  return atomicWriteJson(BOOKINGS_FILE, list);
 }
 
 export function newBookingReference(): string {
@@ -159,6 +157,6 @@ export async function updateBookingStatus(
   const idx = list.findIndex((r) => r.reference.toUpperCase() === ref);
   if (idx === -1) return null;
   list[idx] = { ...list[idx], status };
-  if (!(await writeBookings(list))) return null;
+  if (!(await atomicWriteJson(BOOKINGS_FILE, list))) return null;
   return toFull(list[idx]);
 }

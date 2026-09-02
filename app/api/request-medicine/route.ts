@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { logSubmission, newReference } from "@/lib/submissions";
+import { isValidKenyanPhone, LENGTHS } from "@/lib/validation";
 
 export const runtime = "nodejs";
 
@@ -21,11 +22,9 @@ export async function POST(request: Request) {
   try {
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-    if (!rateLimit(`request:${ip}`, 5, 60_000)) {
-      return NextResponse.json(
-        { error: "Too many requests — please try again shortly." },
-        { status: 429 }
-      );
+    const rl = rateLimit(`request:${ip}`, 5, 60_000);
+    if (!rl.ok) {
+      return rateLimitResponse(rl.retryAfterSec, "Too many requests.");
     }
 
     const fd = await request.formData().catch(() => null);
@@ -41,17 +40,17 @@ export async function POST(request: Request) {
     const fulfilment = field(fd, "fulfilment");
 
     const errors: Record<string, string> = {};
-    if (medicine.length < 3 || medicine.length > 500)
-      errors.medicine = "Please describe the medicine or product you need.";
-    if (fullName.length < 2 || fullName.length > 80)
+    if (medicine.length < LENGTHS.medicine.min || medicine.length > LENGTHS.medicine.max)
+      errors.medicine = "Please describe the medicine or product you need (3–500 characters).";
+    if (fullName.length < LENGTHS.fullName.min || fullName.length > LENGTHS.fullName.max)
       errors.fullName = "Please enter your full name.";
-    if (!/^(?:\+?254|0)\d{9}$/.test(phone.replace(/\s+/g, "")))
+    if (!isValidKenyanPhone(phone))
       errors.phone = "Please enter a valid Kenyan phone number.";
     if (!["whatsapp", "call"].includes(contactMethod))
       errors.contactMethod = "Please choose a contact method.";
     if (!["pickup", "delivery"].includes(fulfilment))
       errors.fulfilment = "Please choose pickup or delivery.";
-    if (notes.length > 1000) errors.notes = "Notes are too long.";
+    if (notes.length > LENGTHS.notes.max) errors.notes = "Notes are too long.";
 
     const file = fd.get("prescription");
     let fileName = "";
@@ -71,7 +70,7 @@ export async function POST(request: Request) {
     }
 
     const reference = newReference();
-    await logSubmission("request", {
+    const stored = await logSubmission("request", {
       reference,
       medicine,
       fullName,
@@ -81,6 +80,17 @@ export async function POST(request: Request) {
       fulfilment,
       prescriptionFileName: fileName,
     });
+    if (!stored) {
+      // The demo store failed (disk/permissions). Tell the customer instead
+      // of confirming a request nobody will ever see.
+      return NextResponse.json(
+        {
+          error:
+            "We received your details but couldn't save the request right now. Please message us on WhatsApp and the team will help you immediately.",
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ ok: true, reference });
   } catch {

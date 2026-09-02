@@ -43,7 +43,7 @@ export function ArticlesView() {
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[0.625rem] font-semibold uppercase tracking-wide text-primary backdrop-blur">
+                    <span className="absolute left-3 top-3 rounded-full bg-card/90 px-2.5 py-1 text-[0.625rem] font-semibold uppercase tracking-wide text-primary backdrop-blur">
                       {article.category}
                     </span>
                   </div>

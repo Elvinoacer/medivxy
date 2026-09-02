@@ -104,8 +104,12 @@ function parseToMinutes(time: string): number {
   return hour * 60 + minute;
 }
 
-/** Human summary used by WhatsApp confirmations + admin rows. */
-export function bookingSummary(b: BookingFull): string {
+/** Human summary used by WhatsApp confirmations + admin rows.
+ *  Accepts any record with the three fields it reads (works for both
+ *  BookingFull and the privacy-safe BookingPublic on the tracking page). */
+export function bookingSummary(
+  b: Pick<BookingFull, "date" | "slot" | "consultType">
+): string {
   const d = new Date(`${b.date}T00:00:00`);
   const day = d.toLocaleDateString("en-KE", {
     weekday: "short",
@@ -146,8 +150,9 @@ export function validateBookingInput(input: {
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   if (Number.isNaN(date.getTime()) || date < startOfToday)
     errors.date = "Please choose today or a future date.";
-  const maxDate = new Date(startOfToday.getTime() + 21 * 24 * 60 * 60 * 1000);
-  if (date > maxDate) errors.date = "Bookings are limited to the next three weeks.";
+  // 14 days (today + 13) — matches the day strip in the booking form.
+  const maxDate = new Date(startOfToday.getTime() + 13 * 24 * 60 * 60 * 1000);
+  if (date > maxDate) errors.date = "Bookings are limited to the next 14 days.";
   if (!errors.slot && !slotsForDate(date).includes(input.slot))
     errors.slot = "That time is outside opening hours for the chosen day.";
   if (!errors.slot && !errors.date) {

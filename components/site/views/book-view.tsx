@@ -90,7 +90,7 @@ export function BookView() {
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={() => track("whatsapp_click", { source: "book-aside" })}
-                      className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#1faa53] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#199047]"
+                      className="wa-cta flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold shadow-sm"
                     >
                       <MessageCircle aria-hidden="true" className="size-4" />
                       Ask on WhatsApp first

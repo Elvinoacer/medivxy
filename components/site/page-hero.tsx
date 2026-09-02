@@ -16,7 +16,7 @@ export function PageHero({
   className?: string;
 }) {
   return (
-    <section className={cn("relative overflow-hidden border-b bg-white/70", className)}>
+    <section className={cn("relative overflow-hidden border-b bg-card/60", className)}>
       <div aria-hidden="true" className="absolute inset-0 brand-gradient-soft opacity-70" />
       <div
         aria-hidden="true"

@@ -32,6 +32,25 @@ async function readSubscribers(): Promise<StoredSubscriber[]> {
   }
 }
 
+/** Atomic write: serialise to a temp file, then rename over the target. */
+async function atomicWriteJson(file: string, data: unknown): Promise<boolean> {
+  const target = path.join(DATA_DIR, file);
+  const tmp = `${target}.${process.pid}.${Date.now()}.tmp`;
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.writeFile(tmp, JSON.stringify(data, null, 2), "utf8");
+    await fs.rename(tmp, target);
+    return true;
+  } catch {
+    try {
+      await fs.rm(tmp, { force: true });
+    } catch {
+      // best-effort cleanup only
+    }
+    return false;
+  }
+}
+
 export async function listSubscribers(): Promise<NewsletterSubscriber[]> {
   return (await readSubscribers())
     .map((s) => ({
@@ -67,12 +86,9 @@ export async function subscribeEmail(
       return { ok: true, already: true };
     }
     list.push({ email, source, subscribedAt: new Date().toISOString() });
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(
-      path.join(DATA_DIR, NEWSLETTER_FILE),
-      JSON.stringify(list, null, 2),
-      "utf8"
-    );
+    if (!(await atomicWriteJson(NEWSLETTER_FILE, list))) {
+      return { ok: false, reason: "storage" };
+    }
     return { ok: true, already: false };
   } catch {
     return { ok: false, reason: "storage" };

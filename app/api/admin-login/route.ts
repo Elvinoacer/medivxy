@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { ADMIN_COOKIE, ADMIN_SESSION_SECONDS, adminDemoPasscode, isAdmin } from "@/lib/admin-auth";
-import { rateLimit } from "@/lib/rate-limit";
+import { ADMIN_COOKIE, ADMIN_SESSION_SECONDS, adminDemoPasscode, isAdmin, makeAdminSessionToken } from "@/lib/admin-auth";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -21,11 +21,9 @@ export async function GET() {
 export async function POST(request: Request) {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  if (!rateLimit(`admin-login:${ip}`, 10, 60_000)) {
-    return NextResponse.json(
-      { error: "Too many attempts — please wait a minute." },
-      { status: 429 }
-    );
+  const rl = rateLimit(`admin-login:${ip}`, 10, 60_000);
+  if (!rl.ok) {
+    return rateLimitResponse(rl.retryAfterSec, "Too many attempts.");
   }
 
   const body: unknown = await request.json().catch(() => null);
@@ -39,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   const store = await cookies();
-  store.set(ADMIN_COOKIE, "granted", {
+  store.set(ADMIN_COOKIE, makeAdminSessionToken(), {
     httpOnly: true,
     sameSite: "lax",
     path: "/",

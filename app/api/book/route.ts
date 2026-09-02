@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import {
   bookingSummary,
   logBooking,
@@ -20,11 +20,9 @@ export async function POST(request: Request) {
   try {
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-    if (!rateLimit(`booking:${ip}`, 5, 60_000)) {
-      return NextResponse.json(
-        { error: "Too many requests — please try again shortly." },
-        { status: 429 }
-      );
+    const rl = rateLimit(`booking:${ip}`, 5, 60_000);
+    if (!rl.ok) {
+      return rateLimitResponse(rl.retryAfterSec, "Too many bookings.");
     }
 
     const body = (await request.json().catch(() => null)) as {
@@ -58,7 +56,17 @@ export async function POST(request: Request) {
     }
 
     const reference = newBookingReference();
-    await logBooking({ reference, ...input });
+    const stored = await logBooking({ reference, ...input });
+    if (!stored) {
+      // Surface demo-store failures instead of losing the booking silently.
+      return NextResponse.json(
+        {
+          error:
+            "We received your details but couldn't save the booking right now. Please message us on WhatsApp and the team will confirm your slot.",
+        },
+        { status: 500 }
+      );
+    }
 
     // Human-readable summary for the confirmation card + WhatsApp message.
     const summary = bookingSummary({

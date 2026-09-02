@@ -1,16 +1,22 @@
 "use client";
 
-import { Home, HandHeart, Package, MessageCircle, Phone } from "lucide-react";
+import { Home, Pill, CalendarCheck, PackageSearch, Phone } from "lucide-react";
 import { SiteLink } from "@/components/site/link";
-import { business, whatsappLink } from "@/lib/business";
+import { business } from "@/lib/business";
 import { track } from "@/lib/analytics";
 import { useLanguage } from "@/components/site/language-provider";
 import { useCurrentPath } from "@/components/site/use-current-path";
 import { cn } from "@/lib/utils";
 
 /**
- * Mobile sticky bottom bar (research.md §18):
- * Home | Services | Products | WhatsApp | Call — one-handed friendly.
+ * Mobile sticky bottom bar (research.md §18) — one-handed friendly.
+ *
+ * Previously: Home | Services | Products | WhatsApp | Call — the two
+ * flagship actions (Request Medicine, Book) were missing from the most
+ * reachable surface on the site, and WhatsApp duplicated the floating FAB
+ * shown right above this bar. Now the bar carries the conversion actions
+ * (Request · Book · Track) plus Home and Call; WhatsApp stays on the FAB,
+ * and Services/Products/About remain one tap away in the header menu.
  */
 export function MobileNavBar() {
   const currentPath = useCurrentPath();
@@ -31,32 +37,26 @@ export function MobileNavBar() {
       <ul className="mx-auto grid max-w-md grid-cols-5">
         <MobileNavItem href="/" label={t("mobile.home")} icon={Home} trackLabel="mobile-home" active={isActive("/")} />
         <MobileNavItem
-          href="/services"
-          label={t("mobile.services")}
-          icon={HandHeart}
-          trackLabel="mobile-services"
-          active={isActive("/services")}
+          href="/request-medicine"
+          label={t("mobile.request")}
+          icon={Pill}
+          trackLabel="mobile-request"
+          active={isActive("/request-medicine")}
         />
         <MobileNavItem
-          href="/products"
-          label={t("mobile.products")}
-          icon={Package}
-          trackLabel="mobile-products"
-          active={isActive("/products")}
+          href="/book"
+          label={t("mobile.book")}
+          icon={CalendarCheck}
+          trackLabel="mobile-book"
+          active={isActive("/book")}
         />
-        <li>
-          <a
-            href={whatsappLink("Hi Medivyx, I have a question.")}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => track("whatsapp_click", { source: "mobile-bar" })}
-            className="flex min-h-[56px] flex-col items-center justify-center gap-1 px-1 py-2 text-muted-foreground transition-colors hover:text-primary"
-            aria-label="Chat with Medivyx on WhatsApp"
-          >
-            <MessageCircle aria-hidden="true" className="size-5" />
-            <span className="text-[0.625rem] font-medium">WhatsApp</span>
-          </a>
-        </li>
+        <MobileNavItem
+          href="/track"
+          label={t("mobile.track")}
+          icon={PackageSearch}
+          trackLabel="mobile-track"
+          active={isActive("/track")}
+        />
         <li>
           <a
             href={business.phoneHref}

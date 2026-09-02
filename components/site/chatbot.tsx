@@ -80,7 +80,7 @@ function BotBubble({ message, onDone }: { message: UiMessage; onDone?: () => voi
         <BrandMark className="size-6" />
       </span>
       <div className="min-w-0 max-w-[85%]">
-        <div className="rounded-2xl rounded-tl-md bg-white px-4 py-3 text-sm leading-6 text-foreground shadow-sm ring-1 ring-border/70">
+        <div className="rounded-2xl rounded-tl-md bg-card px-4 py-3 text-sm leading-6 text-foreground shadow-sm ring-1 ring-border/70">
           {shown}
           {!done && (
             <span aria-hidden="true" className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-sm bg-primary/60 align-middle" />
@@ -111,7 +111,7 @@ function SuggestionChip({ label }: { label: string }) {
     <button
       type="button"
       data-suggestion={label}
-      className="rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+      className="rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
       {label}
     </button>
@@ -180,9 +180,13 @@ export function Chatbot() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: text,
-            history: messages
-              .slice(-8)
-              .map((m) => ({ role: m.role, content: m.text })),
+            // Structured history (incl. each bot turn's suggestion chips) —
+            // the server engine uses it to resolve "yes"-style follow-ups.
+            history: messages.slice(-8).map((m) => ({
+              role: m.role,
+              content: m.text,
+              suggestions: m.role === "bot" ? m.suggestions : undefined,
+            })),
           }),
         });
         if (!res.ok) throw new Error("chat api error");
@@ -266,7 +270,7 @@ export function Chatbot() {
           aria-live="polite"
           aria-label="Chat conversation"
         >
-          <p className="mx-auto max-w-[90%] rounded-full bg-white px-3 py-1.5 text-center text-[0.6875rem] leading-4 text-muted-foreground ring-1 ring-border/60">
+          <p className="mx-auto max-w-[90%] rounded-full bg-card px-3 py-1.5 text-center text-[0.6875rem] leading-4 text-muted-foreground ring-1 ring-border/60">
             <Sparkles aria-hidden="true" className="mr-1 inline size-3 -translate-y-px" />
             Instant answers from the Medivyx knowledge base
           </p>
@@ -290,7 +294,7 @@ export function Chatbot() {
               <span className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <BrandMark className="size-6" />
               </span>
-              <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-md bg-white px-4 py-3.5 shadow-sm ring-1 ring-border/70">
+              <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-md bg-card px-4 py-3.5 shadow-sm ring-1 ring-border/70">
                 <span className="typing-dot size-1.5 rounded-full bg-primary/70" />
                 <span className="typing-dot size-1.5 rounded-full bg-primary/70" />
                 <span className="typing-dot size-1.5 rounded-full bg-primary/70" />
@@ -316,7 +320,7 @@ export function Chatbot() {
             placeholder="Ask about products, hours, prescriptions…"
             autoComplete="off"
             maxLength={400}
-            className="h-11 flex-1 rounded-full border-input bg-white px-4 text-sm shadow-sm outline-none transition-colors placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-11 flex-1 rounded-full border border-input bg-background px-4 text-sm text-foreground shadow-sm outline-none transition-colors placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring"
           />
           <button
             type="submit"
@@ -344,7 +348,7 @@ function CtaRender({ cta }: { cta: ChatCta }) {
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => track("whatsapp_click", { source: "chatbot" })}
-        className="inline-flex items-center gap-1.5 rounded-full bg-[#1faa53] px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-transform hover:scale-[1.03]"
+        className="wa-cta inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold shadow-sm hover:scale-[1.03]"
       >
         <Phone aria-hidden="true" className="size-3.5" />
         {cta.label}
@@ -366,7 +370,7 @@ function CtaRender({ cta }: { cta: ChatCta }) {
   return (
     <SiteLink
       href={cta.href ?? "/"}
-      className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-white px-3.5 py-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary/5"
+      className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-card px-3.5 py-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary/5"
     >
       <ExternalLink aria-hidden="true" className="size-3.5" />
       {cta.label}
