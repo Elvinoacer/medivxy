@@ -3,10 +3,13 @@
 import { useEffect } from "react";
 import { Hero } from "@/components/site/hero";
 import { TrustBar } from "@/components/site/trust-bar";
+import { QuickActions } from "@/components/site/quick-actions";
 import { QuickHelp } from "@/components/site/quick-help";
 import { FindWhatYouNeed } from "@/components/site/find-what-you-need";
 import { ServicesSection } from "@/components/site/services-section";
 import { FeaturedProducts } from "@/components/site/featured-products";
+import { OffersSection } from "@/components/site/offers-section";
+import { HowItWorks } from "@/components/site/how-it-works";
 import { StatsBand } from "@/components/site/stats-band";
 import { WhyMedivyx } from "@/components/site/why-medivyx";
 import { TestimonialsSection } from "@/components/site/testimonials-section";
@@ -30,10 +33,13 @@ export function HomeView() {
     <main id="main-content">
       <Hero />
       <TrustBar />
+      <QuickActions />
       <QuickHelp />
       <FindWhatYouNeed />
       <ServicesSection />
       <FeaturedProducts />
+      <OffersSection />
+      <HowItWorks />
       <StatsBand />
       <WhyMedivyx />
       <TestimonialsSection />

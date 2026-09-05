@@ -1,69 +1,52 @@
 "use client";
 
-import { Phone, MessageCircle, Navigation, Clock } from "lucide-react";
+import { useState } from "react";
+import { Phone, MessageCircle, Navigation, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/site/reveal";
 import { business, whatsappLink, whatsappMessages, hoursForDate } from "@/lib/business";
 import { useOpenStatus } from "@/lib/open-status";
 import { track } from "@/lib/analytics";
 
-/** Stylised local map (no API key needed — replace with an embedded map later). */
-function StylizedMap() {
+/** Live embedded map (no API key required) with a graceful loading state
+ *  and a storefront photo fallback. If the embed can't load (offline demo),
+ *  the photo + directions buttons still work. */
+function EmbeddedMap() {
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const { lat, lng } = business.mapCoordinates;
+  const src = `https://www.google.com/maps?q=${lat},${lng}(${encodeURIComponent(
+    `${business.name}, ${business.area}`
+  )})&z=15&output=embed`;
+
   return (
-    <div
-      role="img"
-      aria-label={`Stylised map showing ${business.name} in ${business.area}, ${business.city}`}
-      className="relative h-44 overflow-hidden rounded-xl bg-mint/60 sm:h-52"
-    >
-      <svg
-        viewBox="0 0 400 200"
-        className="absolute inset-0 size-full"
-        preserveAspectRatio="xMidYMid slice"
-        aria-hidden="true"
-      >
-        {/* roads */}
-        <g stroke="oklch(0.93 0.01 100)" strokeWidth="10" strokeLinecap="round">
-          <path d="M-10 60 H410" />
-          <path d="M-10 140 H410" />
-          <path d="M90 -10 V210" />
-          <path d="M300 -10 V210" />
-        </g>
-        <g stroke="white" strokeWidth="4" strokeLinecap="round">
-          <path d="M-10 60 H410" />
-          <path d="M-10 140 H410" />
-          <path d="M90 -10 V210" />
-          <path d="M300 -10 V210" />
-          <path d="M-10 100 H80" strokeDasharray="1 10" strokeWidth="2.5" />
-        </g>
-        {/* green spaces */}
-        <circle cx="180" cy="40" r="26" fill="oklch(0.9 0.05 150)" />
-        <circle cx="350" cy="170" r="34" fill="oklch(0.9 0.05 150)" />
-        <rect x="110" y="160" width="60" height="30" rx="6" fill="oklch(0.92 0.04 85)" />
-        {/* blocks */}
-        <g fill="oklch(0.97 0.005 100)" stroke="oklch(0.9 0.01 100)" strokeWidth="1.5">
-          <rect x="115" y="80" width="60" height="38" rx="4" />
-          <rect x="200" y="80" width="80" height="38" rx="4" />
-          <rect x="115" y="128" width="60" height="0" rx="4" />
-        </g>
-        {/* label */}
-        <text x="222" y="105" fontSize="8" fill="oklch(0.5 0.02 165)" textAnchor="middle">
-          {business.area}
-        </text>
-      </svg>
-      {/* Pin */}
-      <div className="absolute left-[57%] top-[38%] -translate-x-1/2 -translate-y-full">
-        <div className="relative flex flex-col items-center">
-          <span className="absolute -bottom-2 size-8 animate-ping rounded-full bg-primary/25" />
-          <span className="relative flex size-11 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/40 ring-4 ring-white">
-            <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z" />
-            </svg>
-          </span>
+    <div className="relative h-52 overflow-hidden rounded-xl bg-mint/50 sm:h-64">
+      {!failed && (
+        <iframe
+          title={`Map showing ${business.name} in ${business.area}, ${business.city}`}
+          src={src}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          onLoad={() => setLoaded(true)}
+          onError={() => setFailed(true)}
+          className="absolute inset-0 size-full border-0"
+          allowFullScreen
+        />
+      )}
+      {failed && (
+        /* eslint-disable-next-line @next/next/no-img-element -- fallback only renders when the map iframe fails (offline demo) */
+        <img
+          src="/images/storefront.webp"
+          alt={`${business.name} storefront in ${business.area}`}
+          className="absolute inset-0 size-full object-cover"
+        />
+      )}
+      {!loaded && !failed && (
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 text-primary">
+          <Loader2 aria-hidden="true" className="size-6 animate-spin" />
+          <p className="text-xs font-medium">Loading map…</p>
         </div>
-      </div>
-      <span className="absolute bottom-2 left-2 rounded-full bg-card/90 px-2.5 py-1 text-[0.625rem] font-medium text-muted-foreground shadow-sm">
-        Roysambu, Nairobi
-      </span>
+      )}
     </div>
   );
 }
@@ -79,7 +62,7 @@ export function LocationCard() {
     <Reveal>
       <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
         <div className="p-5 sm:p-6">
-          <StylizedMap />
+          <EmbeddedMap />
           <div className="mt-5 flex flex-wrap items-start justify-between gap-4">
             <div>
               <h3 className="font-display text-xl font-semibold text-foreground">

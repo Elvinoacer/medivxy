@@ -20,6 +20,12 @@ export interface Product {
   prescriptionRequired: boolean;
   featured?: boolean;
   icon: string; // lucide icon name rendered by <ProductIcon />
+  /** Indicative price in KES (demo — confirmed by the team at checkout). */
+  price: number;
+  /** Human pack description, e.g. "Pack of 20 tablets". */
+  packSize: string;
+  /** Product photography (webp) used on cards and detail pages. */
+  image: string;
 }
 
 export interface Service {
@@ -126,4 +132,66 @@ export interface NewsletterSubscriber {
   email: string;
   source: string;
   subscribedAt: string;
+}
+
+/* ── Online orders (shop / checkout) ── */
+
+export type OrderStatus =
+  | "received" // order placed + paid (or awaiting payment)
+  | "reviewing" // prescription items under pharmacist review
+  | "preparing" // items being packed
+  | "ready" // ready for pickup / out for delivery
+  | "completed"; // collected / delivered
+
+export type PaymentMethod = "mpesa" | "card" | "on-collection";
+export type PaymentStatus = "paid-demo" | "pending";
+
+/** One line of an order (a snapshot of the product at purchase time). */
+export interface OrderItem {
+  slug: string;
+  name: string;
+  category: string;
+  unitPrice: number; // KES
+  quantity: number;
+  prescriptionRequired: boolean;
+  image: string;
+  packSize: string;
+}
+
+/** Privacy-safe public view of an order for the tracking page. */
+export interface OrderPublic {
+  reference: string;
+  items: OrderItem[];
+  itemCount: number;
+  /** Grand total in KES — items + delivery fee − promo discount − points. */
+  total: number;
+  /** Delivery fee included in `total` (0 for pickup / free delivery). */
+  deliveryFee: number;
+  /** Promo discount subtracted from `total` (0 when none). */
+  discount: number;
+  /** Applied promo code ("" when none). */
+  promoCode: string;
+  /** MediPoints discount in KES (0 when none). */
+  loyaltyDiscount: number;
+  /** MediPoints redeemed by this order (0 when none). */
+  pointsRedeemed: number;
+  /** MediPoints earned by this order (0 when unknown/legacy). */
+  pointsEarned: number;
+  fulfilment: "pickup" | "delivery";
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  hasPrescriptionItems: boolean;
+  status: OrderStatus;
+  placedAt: string;
+}
+
+/** Full order record as shown in the staff dashboard. */
+export interface OrderFull extends OrderPublic {
+  fullName: string;
+  phone: string;
+  email: string;
+  address: string;
+  area: string;
+  notes: string;
+  prescriptionFileName: string;
 }

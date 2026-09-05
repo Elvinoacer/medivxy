@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
 import {
   ArrowRight,
@@ -43,6 +44,14 @@ const CONSULT_ICONS: Record<string, typeof Pill> = {
   "prescription-review": FileText,
   "bp-check": HeartPulse,
   "wellness-advice": Leaf,
+};
+
+/** Imagery per consultation type — self-explanatory at a glance. */
+const CONSULT_IMAGES: Record<string, string> = {
+  "pharmacist-chat": "/images/service-consult.webp",
+  "prescription-review": "/images/quick-rx.webp",
+  "bp-check": "/images/products/blood-pressure-monitor.webp",
+  "wellness-advice": "/images/category-wellness.webp",
 };
 
 const DAYS_AHEAD = 13; // 14 bookable days including today
@@ -334,15 +343,16 @@ export function BookingForm() {
             What do you need help with?
           </legend>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {CONSULT_TYPES.map((c: ConsultType) => {
+            {CONSULT_TYPES.map((c: ConsultType, ci: number) => {
               const Icon = CONSULT_ICONS[c.id] ?? Pill;
               const selected = form.consultType === c.id;
+              const image = CONSULT_IMAGES[c.id] ?? "/images/quick-book.webp";
               return (
                 <label
                   key={c.id}
                   className={cn(
-                    "relative flex cursor-pointer flex-col gap-2 rounded-xl border p-4 transition-all duration-200 has-[input:checked]:border-primary has-[input:checked]:bg-mint/40 has-[input:checked]:shadow-sm",
-                    "hover:border-primary/50 hover:bg-mint/20"
+                    "group relative flex cursor-pointer gap-3 overflow-hidden rounded-xl border p-0 transition-all duration-200 has-[input:checked]:border-primary has-[input:checked]:shadow-md",
+                    "hover:border-primary/50 hover:shadow-sm"
                   )}
                 >
                   <input
@@ -353,29 +363,47 @@ export function BookingForm() {
                     onChange={() => set("consultType", c.id)}
                     className="peer sr-only"
                   />
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-2.5">
-                      <span
-                        className={cn(
-                          "flex size-9 items-center justify-center rounded-lg transition-colors",
-                          selected
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-primary/10 text-primary"
-                        )}
-                      >
-                        <Icon aria-hidden="true" className="size-4.5" />
-                      </span>
-                      <span className="text-sm font-semibold text-foreground">
-                        {c.label}
-                      </span>
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[0.625rem] font-medium text-secondary-foreground">
-                      <Clock aria-hidden="true" className="size-3" />
-                      {c.duration}
-                    </span>
+                  {/* Thumbnail */}
+                  <span className="relative hidden w-24 shrink-0 overflow-hidden sm:block">
+                    <Image
+                      src={image}
+                      alt=""
+                      fill
+                      priority={ci === 0}
+                      sizes="96px"
+                      className={cn(
+                        "object-cover transition-all duration-300",
+                        selected
+                          ? "opacity-100"
+                          : "opacity-75 grayscale-[30%] group-hover:opacity-100 group-hover:grayscale-0"
+                      )}
+                    />
                   </span>
-                  <span className="text-xs leading-5 text-muted-foreground">
-                    {c.description}
+                  <span className="flex min-w-0 flex-1 flex-col gap-2 p-4 sm:pl-4">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        <span
+                          className={cn(
+                            "flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors",
+                            selected
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-primary/10 text-primary"
+                          )}
+                        >
+                          <Icon aria-hidden="true" className="size-4.5" />
+                        </span>
+                        <span className="text-sm font-semibold text-foreground">
+                          {c.label}
+                        </span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[0.625rem] font-medium text-secondary-foreground">
+                        <Clock aria-hidden="true" className="size-3" />
+                        {c.duration}
+                      </span>
+                    </span>
+                    <span className="text-xs leading-5 text-muted-foreground">
+                      {c.description}
+                    </span>
                   </span>
                 </label>
               );

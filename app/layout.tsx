@@ -12,6 +12,8 @@ import { CookieConsent } from "@/components/site/cookie-consent";
 import { Chatbot } from "@/components/site/chatbot";
 import { ChatbotProvider } from "@/components/site/chatbot-context";
 import { LanguageProvider } from "@/components/site/language-provider";
+import { CartProvider } from "@/components/site/cart-provider";
+import { CartSheet } from "@/components/site/cart-sheet";
 import { business, site } from "@/lib/business";
 import { escapeJsonLd } from "@/lib/utils";
 
@@ -123,6 +125,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-screen flex-col bg-background font-sans">
         <LanguageProvider>
         <ChatbotProvider>
+        <CartProvider>
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-primary focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-primary-foreground focus:shadow-lg"
@@ -138,6 +141,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <CookieConsent />
           <Chatbot />
           <Toaster position="top-center" richColors />
+          <CartSheet />
+        </CartProvider>
         </ChatbotProvider>
         </LanguageProvider>
         <OrganizationJsonLd />

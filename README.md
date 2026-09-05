@@ -102,12 +102,16 @@ Production build: `npm run build && npm start`. Lint: `npm run lint`.
 | **Pages** | Home, About, Services, Pharmacy, Products, Product detail, Health Information (+ articles), Contact, Request Medicine, `/admin` (analytics demo) |
 | **Signature feature** | **Ask Medivyx** chatbot in the header — answers from a self-contained knowledge base with strict safety guardrails (never diagnoses/prescribes), context-aware WhatsApp CTAs and suggested questions |
 | **Medicine request flow** | 4-step wizard: what you need (+ optional prescription upload) → your details → pickup/delivery → review → confirmation with reference code and WhatsApp/Call CTAs |
-| **Catalogue** | 27 demo products across 5 categories with search, filters, availability indicators and "Prescription Required" flags — nothing is purchasable, everything routes to "Ask" |
+| **Imagery** | 44 AI-generated demo photos — hero collage, quick-action tiles, per-category imagery, service cards, consultation photos, one photo per product (webp, ~3 MB total) |
+| **Catalogue & shop** | 27 demo products across 5 categories with product photography, KES prices, pack sizes, search, filters, category tiles, availability indicators and "Prescription Required" flags |
 | **WhatsApp integration** | Floating button + context-aware pre-filled messages on products, prescriptions, directions and requests |
 | **Mobile** | Sticky bottom bar (Home · Services · Products · WhatsApp · Call), one-hand friendly, safe-area aware |
 | **SEO** | Per-page metadata, canonical URLs, Open Graph/Twitter cards, `sitemap.xml`, `robots.txt`, JSON-LD (Organization, Pharmacy, FAQ, Product, Article) |
 | **Accessibility** | Semantic HTML, skip link, ARIA labels, visible focus states, reduced-motion support, ≥44px touch targets |
 | **Analytics demo** | `/admin` shows live counts ("N people viewed your pharmacy this week") fed by `/api/track` |
+| **Online shop** | Full checkout flow — basket (persists in localStorage) → details → prescription upload → payment (simulated M-Pesa STK push, card, or pay-on-collection) → ORD-XXXX confirmation. Rx items route through pharmacist review with pay-after-confirmation |
+| **Order tracking** | ORD-XXXX (shop orders) joins MDX-XXXX (requests) and BKG-XXXX (bookings) on /track — live cards, 30s auto-refresh, reorder button |
+| **Staff dashboard** | `/admin` gains a Shop orders queue (advance/undo statuses, searchable) alongside requests, bookings and analytics |
 | **Security** | Server-side validation (zod), rate limiting, honeypot, file type/size restrictions — uploaded prescriptions are **not** stored (demo policy) |
 
 ## Where things live
@@ -132,3 +136,30 @@ public/images/          AI-generated demo photography (webp)
 5. Swap the in-memory analytics + JSON submission stores (`/api/track`, `lib/submissions.ts`) for a real database.
 
 > **Demo boundaries (by design):** no invented certifications, prices, or availability guarantees; antibiotics and prescription medicines are never purchasable; the chatbot refuses medical advice and points to the pharmacist.
+
+
+---
+
+## Online shop (this revision)
+
+The catalogue is now a real (demo) store:
+
+- **Prices & packs** — every product carries an indicative KES price and pack
+  size (`data/products.json`); the API re-prices basket lines **server-side**
+  from the catalogue so a tampered client can't invent totals.
+- **Basket** — persistent (localStorage), quantity-steppers, live badge in the
+  header and mobile bottom bar, slide-over sheet with subtotal.
+- **Checkout** (`/checkout`) — basket review → contact & pickup/delivery →
+  prescription (Rx baskets only) → payment → confirmation.
+  - **M-Pesa**: simulated STK-push dialog (clearly labelled demo — no money moves).
+  - **Card**: demo mode, any values accepted.
+  - **Pay on collection/confirmation**.
+  - **Rx baskets**: M-Pesa/card disabled, order lands as `reviewing` and payment
+    happens after the pharmacist confirms — antibiotics are never
+    one-tap-purchasable.
+- **Orders** — `POST /api/orders` (zod + rate-limit + atomic JSON store),
+  ORD-XXXX references, status machine `received → reviewing → preparing →
+  ready → completed` driven from `/admin` and surfaced live on `/track`
+  (30s polling, status-change toasts, reorder button).
+- **Demo seeds** — `ORD-DEMO` is auto-seeded so the tracking demo chip works
+  on a fresh clone (mirrors MDX-DEMO / BKG-DEMO).

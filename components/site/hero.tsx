@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowRight, MapPin, MessageCircle, Phone } from "lucide-react";
+import { ArrowRight, MapPin, MessageCircle, Phone, TicketPercent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteLink } from "@/components/site/link";
 import { Reveal } from "@/components/site/reveal";
@@ -96,6 +96,27 @@ export function Hero() {
                   </a>
                 </Button>
               </div>
+              {/* First-order offer ribbon — surfaces the promo code at the
+                  site's entry point (links to the offers section). */}
+              <SiteLink
+                href="/#offers-heading"
+                trackLabel="hero-offer-ribbon"
+                className="group mt-4 inline-flex max-w-full items-center gap-2 rounded-full border border-dashed border-honey/60 bg-honey-soft/70 py-1.5 pl-2 pr-3.5 text-xs font-medium text-accent-foreground shadow-sm transition-all hover:border-honey hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex size-6 shrink-0 items-center justify-center rounded-full bg-honey text-honey-foreground"
+                >
+                  <TicketPercent className="size-3.5" />
+                </span>
+                <span className="truncate">
+                  {t("hero.offerRibbon")}
+                </span>
+                <ArrowRight
+                  aria-hidden="true"
+                  className="size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5"
+                />
+              </SiteLink>
             </Reveal>
 
             <Reveal delay={4}>
@@ -120,18 +141,19 @@ export function Hero() {
             </Reveal>
           </div>
 
-          {/* Image */}
+          {/* Image collage */}
           <Reveal delay={2} className="relative">
             <div className="relative">
               <div
                 aria-hidden="true"
                 className="absolute -inset-3 rounded-[2rem] bg-gradient-to-br from-primary/15 via-transparent to-honey-soft/60 blur-xl"
               />
+              {/* Main photo */}
               <div className="relative overflow-hidden rounded-[1.75rem] shadow-xl shadow-foreground/10 ring-1 ring-border">
                 <Image
                   src="/images/hero-pharmacy.webp"
                   alt="Inside the Medivyx pharmacy — warm, well-organised shelves of healthcare products"
-                  width={1536}
+                  width={1344}
                   height={768}
                   priority
                   sizes="(max-width: 1024px) 100vw, 55vw"
@@ -143,8 +165,20 @@ export function Hero() {
                 />
               </div>
 
+              {/* Portrait cut-out overlapping the main photo */}
+              <div className="float-soft absolute -bottom-10 -left-6 hidden w-40 rotate-[-4deg] overflow-hidden rounded-2xl border-4 border-card shadow-xl sm:block lg:w-48">
+                <Image
+                  src="/images/hero-pharmacist.webp"
+                  alt="A Medivyx pharmacist ready to help at the counter"
+                  width={400}
+                  height={540}
+                  sizes="192px"
+                  className="aspect-[3/4] w-full object-cover"
+                />
+              </div>
+
               {/* Floating cards */}
-              <div className="float-soft absolute -bottom-5 left-4 hidden rounded-2xl bg-card/95 px-4 py-3 shadow-lg ring-1 ring-border backdrop-blur sm:block">
+              <div className="float-soft absolute -bottom-5 left-40 hidden rounded-2xl bg-card/95 px-4 py-3 shadow-lg ring-1 ring-border backdrop-blur sm:block">
                 <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <MessageCircle aria-hidden="true" className="size-4" />

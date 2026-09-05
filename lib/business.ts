@@ -107,4 +107,44 @@ export const whatsappMessages = {
     `Hi Medivyx, I just submitted medicine request ${ref}.`,
   booking: (ref: string, summary: string) =>
     `Hi Medivyx, I just booked a consultation (${ref}) for ${summary}. Please confirm the slot.`,
+  order: (ref: string, summary: string) =>
+    `Hi Medivyx, I just placed order ${ref} (${summary}) on the website. Please confirm it.`,
 } as const;
+
+/* ── Delivery zones (checkout fee table — single source of truth) ── */
+
+export interface DeliveryZone {
+  /** Select-option value + the `area` string stored on the order. */
+  name: string;
+  /** Fee in KES for this zone (before the free-delivery threshold). */
+  fee: number;
+  /** Human ETA label shown in the picker and fee table. */
+  eta: string;
+}
+
+/** Delivery zones around Roysambu — used by the checkout area picker, the
+ *  fee table, and server-side re-pricing (client can't invent fees). */
+export const deliveryZones: readonly DeliveryZone[] = [
+  { name: "Roysambu / TRM area", fee: 150, eta: "Under 1 hour" },
+  { name: "Kasarani", fee: 200, eta: "1–2 hours" },
+  { name: "Githurai 44 / 45", fee: 250, eta: "1–2 hours" },
+  { name: "Kahawa West / Wendani", fee: 250, eta: "1–2 hours" },
+  { name: "Ruaraka / Baba Dogo", fee: 300, eta: "2–3 hours" },
+  { name: "Other nearby areas", fee: 0, eta: "Fee confirmed by phone" },
+];
+
+/** Orders at or above this subtotal ship free (classic basket incentive). */
+export const FREE_DELIVERY_OVER = 3_000;
+
+/** Zone lookup by the stored area string (null when unknown/empty). */
+export function findDeliveryZone(name: string): DeliveryZone | null {
+  const n = name.trim().toLowerCase();
+  return deliveryZones.find((z) => z.name.toLowerCase() === n) ?? null;
+}
+
+/** Delivery fee for an order — free at/above the threshold, 0 when the zone
+ *  fee is "confirmed by phone" (Other), 0 for unknown areas and pickup. */
+export function deliveryFeeFor(subtotal: number, area: string): number {
+  if (subtotal >= FREE_DELIVERY_OVER) return 0;
+  return findDeliveryZone(area)?.fee ?? 0;
+}

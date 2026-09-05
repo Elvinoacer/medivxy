@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { findMedicineRequest, normalizeReference } from "@/lib/submissions";
 import { findBooking, normalizeBookingReference } from "@/lib/bookings";
+import { findOrder, normalizeOrderReference } from "@/lib/orders";
 import { rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 /**
  * Public order-tracking lookup (research.md §8 + §24).
- * Accepts BOTH reference families:
+ * Accepts ALL reference families:
  *  - MDX-XXXX → medicine requests
  *  - BKG-XXXX → consultation bookings
+ *  - ORD-XXXX → online shop orders
  * Returns a privacy-safe view — never names, phones or notes,
  * which stay in the staff dashboard only.
  */
@@ -65,11 +67,27 @@ export async function GET(request: Request) {
     );
   }
 
+  // Online shop orders (ORD-XXXX)
+  const orderRef = normalizeOrderReference(ref);
+  if (orderRef) {
+    const order = await findOrder(orderRef);
+    if (order) {
+      return NextResponse.json(
+        { found: true, type: "order" as const, order },
+        { headers: { "Cache-Control": "no-store" } }
+      );
+    }
+    return NextResponse.json(
+      { found: false, error: `We couldn't find an order for ${orderRef}.` },
+      { status: 404 }
+    );
+  }
+
   return NextResponse.json(
     {
       found: false,
       error:
-        "Please enter a reference code like MDX-V9QW (medicine request) or BKG-W4LD (consultation booking).",
+        "Please enter a reference code like ORD-V9QW (shop order), MDX-V9QW (medicine request) or BKG-W4LD (consultation booking).",
     },
     { status: 400 }
   );

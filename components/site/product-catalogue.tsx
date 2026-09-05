@@ -46,6 +46,34 @@ export function ProductCatalogue({
   const [sort, setSort] = useState<SortKey>("featured");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [compareSlugs, setCompareSlugs] = useState<string[]>([]);
+  const [ratings, setRatings] = useState<Record<string, { avg: number; count: number }>>({});
+  const [stock, setStock] = useState<Record<string, number>>({});
+
+  // Rating chips + live stock: two small fetches on mount (reviews and stock
+  // are live stores, so product pages stay statically renderable while the
+  // chips stay fresh).
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/reviews?summary=1");
+        const data = await res.json().catch(() => ({}));
+        if (active && res.ok && data.summaries) setRatings(data.summaries);
+      } catch {
+        // rating chips are optional decoration — silent fallback
+      }
+      try {
+        const res = await fetch("/api/stock");
+        const data = await res.json().catch(() => ({}));
+        if (active && res.ok && data.levels) setStock(data.levels);
+      } catch {
+        // stock chips are optional decoration — silent fallback
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Search analytics: fire once the query settles (800ms after the last
   // keystroke, 3+ characters) and only when it changed — previously every
@@ -222,6 +250,9 @@ export function ProductCatalogue({
             <Reveal as="li" key={product.slug} delay={(i % 3) as 0 | 1 | 2}>
               <ProductCard
                 product={product}
+                eager={i < 4}
+                rating={ratings[product.slug]}
+                stock={stock[product.slug]}
                 compare={{
                   selected: compareSlugs.includes(product.slug),
                   onToggle: () => toggleCompare(product.slug),

@@ -4,6 +4,7 @@ import { listBookings } from "@/lib/bookings";
 import { consultLabel, slotLabel } from "@/lib/booking-shared";
 import { listMedicineRequests } from "@/lib/submissions";
 import { listSubscribers } from "@/lib/newsletter";
+import { listOrders } from "@/lib/orders";
 
 export const runtime = "nodejs";
 
@@ -13,7 +14,7 @@ export const runtime = "nodejs";
  * lists as a spreadsheet for offline records / reporting.
  */
 
-const DATASETS = ["bookings", "requests", "newsletter"] as const;
+const DATASETS = ["bookings", "requests", "newsletter", "orders"] as const;
 type Dataset = (typeof DATASETS)[number];
 
 function isDataset(value: string | null): value is Dataset {
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
   const dataset = new URL(request.url).searchParams.get("dataset");
   if (!isDataset(dataset)) {
     return NextResponse.json(
-      { error: "Unknown dataset — use bookings, requests or newsletter." },
+      { error: "Unknown dataset — use bookings, requests, orders or newsletter." },
       { status: 400 }
     );
   }
@@ -137,6 +138,55 @@ export async function GET(request: NextRequest) {
         r.prescriptionFileName,
         r.notes,
         r.receivedAt,
+      ])
+    );
+  } else if (dataset === "orders") {
+    // Shop orders — basket snapshot, delivery economics (fee + promo) and
+    // the full status/payment picture for reconciliation.
+    const orders = (await listOrders())
+      .filter((o) => withinCutoff(o.placedAt, cutoff));
+    csv = toCsv(
+      [
+        "Reference",
+        "Placed",
+        "Status",
+        "Customer",
+        "Phone",
+        "Email",
+        "Items",
+        "Item count",
+        "Fulfilment",
+        "Area",
+        "Address",
+        "Delivery fee (KES)",
+        "Promo code",
+        "Discount (KES)",
+        "Total (KES)",
+        "Payment method",
+        "Payment status",
+        "Prescription file",
+        "Notes",
+      ],
+      orders.map((o) => [
+        o.reference,
+        o.placedAt,
+        o.status,
+        o.fullName,
+        o.phone,
+        o.email,
+        o.items.map((i) => `${i.name} x${i.quantity}`).join("; "),
+        o.itemCount,
+        o.fulfilment,
+        o.area,
+        o.address,
+        o.deliveryFee,
+        o.promoCode,
+        o.discount,
+        o.total,
+        o.paymentMethod,
+        o.paymentStatus,
+        o.prescriptionFileName,
+        o.notes,
       ])
     );
   } else {

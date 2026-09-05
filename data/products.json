@@ -9,7 +9,10 @@
     "availability": "in-stock",
     "prescriptionRequired": false,
     "featured": true,
-    "icon": "Pill"
+    "icon": "Pill",
+    "price": 150,
+    "packSize": "Pack of 20 tablets",
+    "image": "/images/products/paracetamol-500mg-tablets.webp"
   },
   {
     "slug": "ibuprofen-400mg-tablets",
@@ -20,7 +23,10 @@
     "usageInfo": "Take with or after food as directed. Not suitable for everyone — ask the pharmacy team before use.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Tablets"
+    "icon": "Tablets",
+    "price": 200,
+    "packSize": "Pack of 20 tablets",
+    "image": "/images/products/ibuprofen-400mg-tablets.webp"
   },
   {
     "slug": "amoxicillin-500mg-capsules",
@@ -31,7 +37,10 @@
     "usageInfo": "Prescription required. Antibiotics must only be used as prescribed — never share or reuse leftover courses.",
     "availability": "ask",
     "prescriptionRequired": true,
-    "icon": "ShieldPlus"
+    "icon": "ShieldPlus",
+    "price": 450,
+    "packSize": "Pack of 21 capsules",
+    "image": "/images/products/amoxicillin-500mg-capsules.webp"
   },
   {
     "slug": "cetirizine-10mg-tablets",
@@ -42,7 +51,10 @@
     "usageInfo": "Always read the label. Some people experience mild drowsiness — check with the team if unsure.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Leaf"
+    "icon": "Leaf",
+    "price": 180,
+    "packSize": "Pack of 10 tablets",
+    "image": "/images/products/cetirizine-10mg-tablets.webp"
   },
   {
     "slug": "oral-rehydration-salts",
@@ -54,7 +66,10 @@
     "availability": "in-stock",
     "prescriptionRequired": false,
     "featured": true,
-    "icon": "Droplets"
+    "icon": "Droplets",
+    "price": 60,
+    "packSize": "Single sachet",
+    "image": "/images/products/oral-rehydration-salts.webp"
   },
   {
     "slug": "cough-syrup-honey-lemon",
@@ -65,7 +80,10 @@
     "usageInfo": "Use as directed on the packaging. Ask the team about options for young children.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "FlaskConical"
+    "icon": "FlaskConical",
+    "price": 350,
+    "packSize": "100 ml bottle",
+    "image": "/images/products/cough-syrup-honey-lemon.webp"
   },
   {
     "slug": "antacid-chewable-tablets",
@@ -76,7 +94,10 @@
     "usageInfo": "Chew thoroughly as directed. If symptoms persist, speak to the pharmacy team.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Tablets"
+    "icon": "Tablets",
+    "price": 250,
+    "packSize": "Roll of 24 tablets",
+    "image": "/images/products/antacid-chewable-tablets.webp"
   },
   {
     "slug": "metformin-500mg-tablets",
@@ -87,7 +108,10 @@
     "usageInfo": "Prescription required. Take exactly as prescribed and keep the pharmacy team informed of any changes.",
     "availability": "ask",
     "prescriptionRequired": true,
-    "icon": "Activity"
+    "icon": "Activity",
+    "price": 300,
+    "packSize": "Pack of 30 tablets",
+    "image": "/images/products/metformin-500mg-tablets.webp"
   },
   {
     "slug": "multivitamin-tablets",
@@ -99,7 +123,10 @@
     "availability": "in-stock",
     "prescriptionRequired": false,
     "featured": true,
-    "icon": "Apple"
+    "icon": "Apple",
+    "price": 650,
+    "packSize": "Pack of 30 tablets",
+    "image": "/images/products/multivitamin-tablets.webp"
   },
   {
     "slug": "vitamin-c-1000mg",
@@ -110,7 +137,10 @@
     "usageInfo": "Take as directed. If you take other medicines, check timing with the pharmacy team.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Citrus"
+    "icon": "Citrus",
+    "price": 500,
+    "packSize": "20 effervescent tablets",
+    "image": "/images/products/vitamin-c-1000mg.webp"
   },
   {
     "slug": "iron-and-folic-acid",
@@ -121,7 +151,10 @@
     "usageInfo": "Take as advised by your healthcare provider. The team can share tips on taking iron comfortably.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "HeartPulse"
+    "icon": "HeartPulse",
+    "price": 280,
+    "packSize": "Pack of 30 tablets",
+    "image": "/images/products/iron-and-folic-acid.webp"
   },
   {
     "slug": "zinc-supplement",
@@ -132,7 +165,10 @@
     "usageInfo": "Take as directed on the label. Ask the team about combining supplements safely.",
     "availability": "low-stock",
     "prescriptionRequired": false,
-    "icon": "ShieldPlus"
+    "icon": "ShieldPlus",
+    "price": 300,
+    "packSize": "Pack of 30 tablets",
+    "image": "/images/products/zinc-supplement.webp"
   },
   {
     "slug": "baby-paracetamol-syrup",
@@ -144,7 +180,10 @@
     "availability": "in-stock",
     "prescriptionRequired": false,
     "featured": true,
-    "icon": "Baby"
+    "icon": "Baby",
+    "price": 250,
+    "packSize": "60 ml bottle",
+    "image": "/images/products/baby-paracetamol-syrup.webp"
   },
   {
     "slug": "baby-vitamin-d-drops",
@@ -155,7 +194,10 @@
     "usageInfo": "Use as directed on the packaging. Ideal for babies from birth as part of daily care.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Sun"
+    "icon": "Sun",
+    "price": 800,
+    "packSize": "10 ml dropper bottle",
+    "image": "/images/products/baby-vitamin-d-drops.webp"
   },
   {
     "slug": "petroleum-jelly-baby",
@@ -166,7 +208,10 @@
     "usageInfo": "Apply to clean, dry skin as needed. For external use only.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Droplets"
+    "icon": "Droplets",
+    "price": 220,
+    "packSize": "100 g tub",
+    "image": "/images/products/petroleum-jelly-baby.webp"
   },
   {
     "slug": "baby-wipes-fragrance-free",
@@ -177,7 +222,10 @@
     "usageInfo": "Reseal the pack after use. Suitable for sensitive skin.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Sparkles"
+    "icon": "Sparkles",
+    "price": 350,
+    "packSize": "Pack of 80 wipes",
+    "image": "/images/products/baby-wipes-fragrance-free.webp"
   },
   {
     "slug": "infant-nasal-saline-drops",
@@ -188,7 +236,10 @@
     "usageInfo": "Use as directed. Gentle enough for daily use during colds.",
     "availability": "low-stock",
     "prescriptionRequired": false,
-    "icon": "Wind"
+    "icon": "Wind",
+    "price": 300,
+    "packSize": "15 ml dropper bottle",
+    "image": "/images/products/infant-nasal-saline-drops.webp"
   },
   {
     "slug": "antiseptic-solution-250ml",
@@ -199,7 +250,10 @@
     "usageInfo": "Dilute and apply as directed on the label. Seek medical help for deep or dirty wounds.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "ShieldCheck"
+    "icon": "ShieldCheck",
+    "price": 280,
+    "packSize": "250 ml bottle",
+    "image": "/images/products/antiseptic-solution-250ml.webp"
   },
   {
     "slug": "hand-sanitizer-500ml",
@@ -210,7 +264,10 @@
     "usageInfo": "Apply a coin-sized amount and rub until dry. Keep away from young children.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Sparkles"
+    "icon": "Sparkles",
+    "price": 400,
+    "packSize": "500 ml pump bottle",
+    "image": "/images/products/hand-sanitizer-500ml.webp"
   },
   {
     "slug": "medical-face-masks-50",
@@ -221,7 +278,10 @@
     "usageInfo": "Fit snugly, avoid touching the front, and dispose safely after use.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Shield"
+    "icon": "Shield",
+    "price": 350,
+    "packSize": "Box of 50 masks",
+    "image": "/images/products/medical-face-masks-50.webp"
   },
   {
     "slug": "fluoride-toothpaste",
@@ -232,7 +292,10 @@
     "usageInfo": "Brush twice daily. Ask the team about children’s options.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Smile"
+    "icon": "Smile",
+    "price": 350,
+    "packSize": "100 ml tube",
+    "image": "/images/products/fluoride-toothpaste.webp"
   },
   {
     "slug": "aloe-vera-gel",
@@ -243,7 +306,10 @@
     "usageInfo": "Apply generously to clean skin. For external use only.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Leaf"
+    "icon": "Leaf",
+    "price": 450,
+    "packSize": "200 ml tube",
+    "image": "/images/products/aloe-vera-gel.webp"
   },
   {
     "slug": "digital-thermometer",
@@ -255,7 +321,10 @@
     "availability": "in-stock",
     "prescriptionRequired": false,
     "featured": true,
-    "icon": "Thermometer"
+    "icon": "Thermometer",
+    "price": 800,
+    "packSize": "1 digital thermometer",
+    "image": "/images/products/digital-thermometer.webp"
   },
   {
     "slug": "home-first-aid-kit",
@@ -267,7 +336,10 @@
     "availability": "in-stock",
     "prescriptionRequired": false,
     "featured": true,
-    "icon": "BriefcaseMedical"
+    "icon": "BriefcaseMedical",
+    "price": 1500,
+    "packSize": "1 stocked kit",
+    "image": "/images/products/home-first-aid-kit.webp"
   },
   {
     "slug": "blood-pressure-monitor",
@@ -278,7 +350,10 @@
     "usageInfo": "Sit still and follow the device instructions. Share your readings with your healthcare provider.",
     "availability": "ask",
     "prescriptionRequired": false,
-    "icon": "HeartPulse"
+    "icon": "HeartPulse",
+    "price": 3500,
+    "packSize": "1 monitor + cuff",
+    "image": "/images/products/blood-pressure-monitor.webp"
   },
   {
     "slug": "disposable-gloves",
@@ -289,7 +364,10 @@
     "usageInfo": "Single use only. Dispose of safely after each task.",
     "availability": "in-stock",
     "prescriptionRequired": false,
-    "icon": "Hand"
+    "icon": "Hand",
+    "price": 500,
+    "packSize": "Box of 100 gloves",
+    "image": "/images/products/disposable-gloves.webp"
   },
   {
     "slug": "glucose-test-strips",
@@ -300,6 +378,9 @@
     "usageInfo": "Check compatibility with your meter. Store in the original container away from heat.",
     "availability": "ask",
     "prescriptionRequired": false,
-    "icon": "Activity"
+    "icon": "Activity",
+    "price": 1200,
+    "packSize": "50 test strips",
+    "image": "/images/products/glucose-test-strips.webp"
   }
 ]

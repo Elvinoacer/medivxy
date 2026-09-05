@@ -14,6 +14,7 @@ import {
 import { Logo } from "@/components/site/logo";
 import { SiteLink } from "@/components/site/link";
 import { SiteSearch } from "@/components/site/site-search";
+import { CartButton } from "@/components/site/cart-button";
 import { useChatbot } from "@/components/site/chatbot-context";
 import { useLanguage } from "@/components/site/language-provider";
 import { LanguageToggle } from "@/components/site/language-toggle";
@@ -172,11 +173,12 @@ export function SiteHeader() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <CartButton />
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setSearchOpen(true)}
-              className="rounded-full text-primary hover:bg-secondary hover:text-primary"
+              className="hidden rounded-full text-primary hover:bg-secondary hover:text-primary sm:inline-flex"
               aria-label="Open search (Ctrl+K)"
               title="Search — Ctrl+K"
             >
@@ -192,7 +194,11 @@ export function SiteHeader() {
             >
               <MessageCircleHeart aria-hidden="true" className="size-5" />
             </Button>
-            <LanguageToggle compact />
+            {/* Compact EN/SW toggle — below md it moves into the mobile menu
+                to keep the header row inside a 360px viewport. */}
+            <span className="hidden md:inline-flex">
+              <LanguageToggle compact />
+            </span>
             <ThemeToggle />
             <Button
               asChild
@@ -231,6 +237,20 @@ export function SiteHeader() {
                   </SheetDescription>
                 </SheetHeader>
                 <nav aria-label="Mobile navigation" className="flex-1 overflow-y-auto scrollbar-thin">
+                  <div className="p-2 pb-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpen(false);
+                        setSearchOpen(true);
+                      }}
+                      className="flex min-h-11 w-full items-center gap-2 rounded-xl px-4 py-3 text-base font-medium text-foreground/85 transition-colors hover:bg-secondary sm:hidden"
+                    >
+                      <Search aria-hidden="true" className="size-4.5 text-primary" />
+                      {t("header.search")} the site
+                      <span aria-hidden="true" className="ml-auto text-xs text-muted-foreground">Ctrl+K</span>
+                    </button>
+                  </div>
                   <ul className="flex flex-col p-2">
                     {NAV_ITEMS.map((item) => {
                       const active = isNavActive(item.href);

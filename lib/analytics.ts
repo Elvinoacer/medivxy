@@ -29,7 +29,19 @@ export type AnalyticsEvent =
   | "navigation"
   | "share_click"
   | "language_toggle"
-  | "newsletter_signup";
+  | "newsletter_signup"
+  // Shop / commerce funnel events:
+  | "shop_tab_click"
+  | "add_to_cart"
+  | "cart_open"
+  | "checkout_start"
+  | "promo_applied"
+  | "promo_copy"
+  | "loyalty_redeem"
+  | "order_placed"
+  | "reorder"
+  | "receipt_print"
+  | "question_asked";
 
 export const CONSENT_KEY = "medivyx:consent";
 

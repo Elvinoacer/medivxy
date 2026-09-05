@@ -47,12 +47,22 @@ export function getFeaturedProducts(): Product[] {
   return products.filter((p) => p.featured);
 }
 
-export function formatAvailability(product: Product): {
+export function formatAvailability(
+  product: Product,
+  /** Live stock level (from /api/stock) when known — refines the chip. */
+  stock?: number
+): {
   label: string;
-  tone: "in" | "low" | "ask";
+  tone: "in" | "low" | "ask" | "out";
 } {
   if (product.prescriptionRequired) {
+    // Rx chip stays, but stock still matters for the buy box hint.
+    if (stock === 0) return { label: "Out of Stock", tone: "out" };
     return { label: "Prescription Required", tone: "ask" };
+  }
+  if (stock === 0) return { label: "Out of Stock", tone: "out" };
+  if (typeof stock === "number" && stock > 0 && stock <= 5) {
+    return { label: `Only ${stock} left`, tone: "low" };
   }
   switch (product.availability) {
     case "in-stock":
